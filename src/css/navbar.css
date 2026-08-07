@@ -1,0 +1,13 @@
+.navbar{
+    padding:18px 0;
+}
+
+.navbar-brand{
+    font-size:2rem;
+    font-weight:bold;
+}
+
+.nav-link{
+    font-size:18px;
+    margin-left:15px;
+}
