@@ -1,70 +1,22 @@
-body{
-
-background:#0d0d0d;
-
-color:white;
-
-margin:0;
-
-font-family:Arial,Helvetica,sans-serif;
-
-}
-
-.hero{
-
-min-height:90vh;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-text-align:center;
-
-}
-
-.hero h1{
-
-font-size:5rem;
-
-color:#D4AF37;
-
-font-weight:bold;
-
-}
-
-.hero p{
-
-font-size:1.4rem;
-
-color:#ddd;
-
-max-width:800px;
-
-margin:auto;
-
-margin-top:20px;
-
-margin-bottom:40px;
-
-}
-
-.navbar-brand{
-
-font-size:2rem;
-
-}
-
 @import './css/navbar.css';
 @import './css/hero.css';
 @import './css/products.css';
 @import './css/about.css';
 @import './css/footer.css';
+@import './css/whychoose.css';
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
 body{
-    margin:0;
-    background:#0d0d0d;
-    color:white;
+    background:#111;
+    color:#fff;
     font-family:Arial, Helvetica, sans-serif;
+}
+
+html{
+    scroll-behavior:smooth;
 }

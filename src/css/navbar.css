@@ -11,3 +11,9 @@
     font-size:18px;
     margin-left:15px;
 }
+
+.navbar-logo{
+    width:120px;
+    height:120px;
+    object-fit:contain;
+}

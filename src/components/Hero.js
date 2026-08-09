@@ -1,16 +1,20 @@
-export function Hero(){
+export function Hero() {
 
 return `
 
-<section class="hero">
+<section class="hero d-flex align-items-center">
 
-<div class="container text-center">
+<div class="container">
 
-<h6 class="text-warning">
+<div class="row align-items-center">
+
+<div class="col-lg-7">
+
+<p class="hero-small">
 
 AFRICA'S PREMIUM NUTRITION BRAND
 
-</h6>
+</p>
 
 <h1>
 
@@ -22,17 +26,19 @@ Premium Quality.
 
 </h1>
 
-<p>
+<p class="hero-text">
 
 Premium Jerky • Fruit Powders • Baby Foods • Healthy Snacks
 
 </p>
 
-<button class="btn btn-warning btn-lg">
+<a href="#products" class="btn btn-warning btn-lg">
+    Explore Our Products
+</a>
 
-Explore Products
+</div>
 
-</button>
+</div>
 
 </div>
 

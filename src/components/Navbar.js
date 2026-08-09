@@ -1,72 +1,111 @@
+import logo from "../assets/logo/logo.png";
+
 export function Navbar() {
 
-return `
+    return `
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow sticky-top">
 
-<div class="container">
+    <div class="container">
 
-<a class="navbar-brand fw-bold text-warning fs-3" href="#">
+        <a
+            class="navbar-brand d-flex align-items-center"
+            href="#">
 
-<i class="bi bi-flower1 me-2"></i>
+            <img
+                src="${logo}"
+                alt="NutriDust Foods"
+                class="navbar-logo me-3">
 
-NutriDust Foods
+            <div>
 
-</a>
+                <h2 class="m-0 text-warning fw-bold">
+                    NutriDust Foods
+                </h2>
 
-<button class="navbar-toggler"
+                <small class="text-secondary">
+                    Premium Nutrition
+                </small>
 
-type="button"
+            </div>
 
-data-bs-toggle="collapse"
+        </a>
 
-data-bs-target="#navbar">
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarMenu"
+            aria-controls="navbarMenu"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
 
-<span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon"></span>
 
-</button>
+        </button>
 
-<div class="collapse navbar-collapse"
+        <div
+            class="collapse navbar-collapse"
+            id="navbarMenu">
 
-id="navbar">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
 
-<ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">
+                        Home
+                    </a>
+                </li>
 
-<li class="nav-item">
+                <li class="nav-item">
+                    <a class="nav-link" href="#products">
+                        Products
+                    </a>
+                </li>
 
-<a class="nav-link active" href="#">Home</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        Nutrition
+                    </a>
+                </li>
 
-</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        Recipes
+                    </a>
+                </li>
 
-<li class="nav-item">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        Contact
+                    </a>
+                </li>
 
-<a class="nav-link" href="#">Products</a>
+                <li class="nav-item ms-lg-4">
 
-</li>
+                    <button
+                        id="cartButton"
+                        type="button"
+                        class="btn btn-warning position-relative">
 
-<li class="nav-item">
+                        <i class="bi bi-cart3 fs-4"></i>
 
-<a class="nav-link" href="#">Nutrition</a>
+                        <span
+                            id="cartCount"
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
 
-</li>
+                            0
 
-<li class="nav-item">
+                        </span>
 
-<a class="nav-link" href="#">Recipes</a>
+                    </button>
 
-</li>
+                </li>
 
-<li class="nav-item">
+            </ul>
 
-<a class="nav-link" href="#">Contact</a>
+        </div>
 
-</li>
-
-</ul>
-
-</div>
-
-</div>
+    </div>
 
 </nav>
 
