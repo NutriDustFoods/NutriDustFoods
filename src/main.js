@@ -18,7 +18,11 @@ import { Checkout } from "./components/Checkout.js";
 import { showProduct } from "./utils/modal.js";
 import { renderCart } from "./utils/cartUI.js";
 
-import { getProducts, createOrder } from "./services/api.js";
+import {
+    getProducts,
+    createOrder,
+    initializePayment
+} from "./services/api.js";
 
 import {
     addToCart,
@@ -212,7 +216,6 @@ async function init() {
             event.preventDefault();
 
 
-            // Get the submit button directly from the form
             const submitButton =
                 event.currentTarget.querySelector(
                     'button[type="submit"]'
@@ -265,19 +268,23 @@ async function init() {
 
             const items = cartItems.map(item => ({
 
-                productId: item.id || item._id,
+                productId:
+                    item.id || item._id,
 
-                name: item.name,
+                name:
+                    item.name,
 
-                price: Number(item.price),
+                price:
+                    Number(item.price),
 
-                quantity: Number(item.quantity)
+                quantity:
+                    Number(item.quantity)
 
             }));
 
 
             // =================================================
-            // CALCULATE ORDER TOTAL
+            // CALCULATE TOTAL
             // =================================================
 
             const total = cartItems.reduce(
@@ -311,7 +318,7 @@ async function init() {
 
             try {
 
-                // Disable button while submitting
+                // Disable button
                 submitButton.disabled = true;
 
                 submitButton.textContent =
@@ -324,95 +331,107 @@ async function init() {
                 );
 
 
-                const data =
+                // =================================================
+                // CREATE ORDER
+                // =================================================
+
+                const orderResponse =
                     await createOrder(orderData);
 
 
                 console.log(
                     "✅ Order created:",
-                    data
+                    orderResponse
                 );
 
 
                 if (
-                    !data ||
-                    !data.success ||
-                    !data.order
+                    !orderResponse ||
+                    !orderResponse.success ||
+                    !orderResponse.order
                 ) {
 
                     throw new Error(
-                        data?.message ||
+                        orderResponse?.message ||
                         "The order could not be created."
                     );
 
                 }
 
 
+                const orderId =
+                    orderResponse.order.id;
+
+
                 // =================================================
-                // DATABASE USES total_amount
+                // INITIALIZE PAYSTACK
                 // =================================================
 
-                const orderTotal =
-                    Number(data.order.total_amount);
+                submitButton.textContent =
+                    "Connecting to Payment...";
 
 
-                alert(
-                    "Order created successfully!\n\n" +
-                    "Order ID: #" +
-                    data.order.id +
-                    "\n" +
-                    "Total: ₦" +
-                    orderTotal.toLocaleString()
+                console.log(
+                    "💳 Initializing payment for Order:",
+                    orderId
+                );
+
+
+                const paymentResponse =
+                    await initializePayment(orderId);
+
+
+                console.log(
+                    "💳 Payment response:",
+                    paymentResponse
+                );
+
+
+                if (
+                    !paymentResponse ||
+                    !paymentResponse.success ||
+                    !paymentResponse.authorizationUrl
+                ) {
+
+                    throw new Error(
+                        paymentResponse?.message ||
+                        "Unable to initialize payment."
+                    );
+
+                }
+
+
+                // =================================================
+                // SAVE ORDER ID
+                // =================================================
+
+                localStorage.setItem(
+                    "nutridust-pending-order",
+                    String(orderId)
                 );
 
 
                 // =================================================
-                // CLEAR CART
+                // REDIRECT TO PAYSTACK
                 // =================================================
 
-                clearCart();
-
-                renderCart();
-
-
-                // =================================================
-                // CLOSE CHECKOUT
-                // =================================================
-
-                bootstrap.Modal
-                    .getOrCreateInstance(
-                        document.getElementById(
-                            "checkoutModal"
-                        )
-                    )
-                    .hide();
-
-
-                // =================================================
-                // RESTORE BUTTON
-                // =================================================
-
-                submitButton.disabled = false;
-
-                submitButton.textContent =
-                    "Continue to Payment";
-
+                window.location.href =
+                    paymentResponse.authorizationUrl;
 
             } catch (error) {
 
                 console.error(
-                    "❌ Order creation failed:",
+                    "❌ Checkout / Payment Error:",
                     error
                 );
 
 
                 alert(
-                    "Unable to create your order.\n\n" +
+                    "Unable to continue to payment.\n\n" +
                     error.message
                 );
 
 
-                // Restore button
                 submitButton.disabled = false;
 
                 submitButton.textContent =

@@ -13,7 +13,11 @@ db.pragma("journal_mode = WAL");
 
 console.log("✅ SQLite database connected");
 
-// Create Products table
+
+// =====================================================
+// PRODUCTS TABLE
+// =====================================================
+
 db.exec(`
     CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +35,11 @@ db.exec(`
 
 console.log("✅ Products table ready");
 
-// Create Orders table
+
+// =====================================================
+// ORDERS TABLE
+// =====================================================
+
 db.exec(`
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,11 +51,40 @@ db.exec(`
         total_amount REAL NOT NULL,
         payment_status TEXT DEFAULT 'pending',
         order_status TEXT DEFAULT 'pending',
+        payment_reference TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
 
+
+// =====================================================
+// ADD PAYMENT REFERENCE TO EXISTING DATABASES
+// =====================================================
+
+const orderColumns = db
+    .prepare(`PRAGMA table_info(orders)`)
+    .all();
+
+const hasPaymentReference =
+    orderColumns.some(
+        column => column.name === "payment_reference"
+    );
+
+
+if (!hasPaymentReference) {
+
+    db.exec(`
+        ALTER TABLE orders
+        ADD COLUMN payment_reference TEXT
+    `);
+
+    console.log("✅ Payment reference column added");
+
+}
+
+
 console.log("✅ Orders table ready");
+
 
 export default db;

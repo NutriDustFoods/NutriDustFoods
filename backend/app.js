@@ -3,6 +3,7 @@ import cors from "cors";
 
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 const app = express();
 
@@ -29,6 +30,10 @@ app.use("/api/products", productRoutes);
 
 // Order Routes
 app.use("/api/orders", orderRoutes);
+
+
+// Payment Routes
+app.use("/api/payments", paymentRoutes);
 
 
 export default app;
