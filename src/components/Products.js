@@ -6,7 +6,7 @@ export async function Products() {
     const products = await getProducts();
 
     console.log(products);
-    
+
     const cards = products.map(product => `
 
     <div class="col-lg-4 col-md-6">
@@ -63,20 +63,20 @@ export async function Products() {
                 <div class="d-grid gap-2">
 
                     <button
-                    class="btn btn-warning view-product"
-                    data-id="${product._id}">
+                        class="btn btn-warning view-product"
+                        data-id="${product.id}">
 
-                    View Details
+                        View Details
 
                     </button>
 
                     <button
-                    class="btn btn-success add-to-cart"
-                    data-id="${product._id}">
+                        class="btn btn-success add-to-cart"
+                        data-id="${product.id}">
 
-                    <i class="bi bi-cart-plus"></i>
+                        <i class="bi bi-cart-plus"></i>
 
-                    Add to Cart
+                        Add to Cart
 
                     </button>
 

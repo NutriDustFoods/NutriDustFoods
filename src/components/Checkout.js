@@ -1,11 +1,13 @@
 export function Checkout() {
 
-return `
+    return `
 
 <div
 class="modal fade"
 id="checkoutModal"
-tabindex="-1">
+tabindex="-1"
+aria-labelledby="checkoutModalLabel"
+aria-hidden="true">
 
 <div class="modal-dialog modal-lg">
 
@@ -13,7 +15,9 @@ tabindex="-1">
 
 <div class="modal-header border-warning">
 
-<h3 class="text-warning">
+<h3
+class="text-warning"
+id="checkoutModalLabel">
 
 Checkout
 
@@ -22,7 +26,8 @@ Checkout
 <button
 type="button"
 class="btn-close btn-close-white"
-data-bs-dismiss="modal">
+data-bs-dismiss="modal"
+aria-label="Close">
 </button>
 
 </div>
@@ -33,7 +38,9 @@ data-bs-dismiss="modal">
 
 <div class="mb-3">
 
-<label class="form-label">
+<label
+for="customerName"
+class="form-label">
 
 Full Name
 
@@ -43,13 +50,17 @@ Full Name
 type="text"
 class="form-control"
 id="customerName"
+name="customerName"
 required>
 
 </div>
 
+
 <div class="mb-3">
 
-<label class="form-label">
+<label
+for="customerPhone"
+class="form-label">
 
 Phone Number
 
@@ -59,13 +70,17 @@ Phone Number
 type="tel"
 class="form-control"
 id="customerPhone"
+name="customerPhone"
 required>
 
 </div>
 
+
 <div class="mb-3">
 
-<label class="form-label">
+<label
+for="customerEmail"
+class="form-label">
 
 Email Address
 
@@ -75,13 +90,17 @@ Email Address
 type="email"
 class="form-control"
 id="customerEmail"
+name="customerEmail"
 required>
 
 </div>
 
+
 <div class="mb-3">
 
-<label class="form-label">
+<label
+for="customerAddress"
+class="form-label">
 
 Delivery Address
 
@@ -91,11 +110,14 @@ Delivery Address
 class="form-control"
 rows="3"
 id="customerAddress"
+name="customerAddress"
 required></textarea>
 
 </div>
 
+
 <hr>
+
 
 <h4 class="text-warning">
 
@@ -103,14 +125,19 @@ Order Total
 
 </h4>
 
-<h2 id="checkoutTotal">
+
+<h2
+id="checkoutTotal"
+class="fw-bold">
 
 ₦0
 
 </h2>
 
+
 <button
 type="submit"
+id="continuePaymentButton"
 class="btn btn-warning w-100 mt-4">
 
 Continue to Payment

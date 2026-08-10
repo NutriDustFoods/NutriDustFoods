@@ -1,45 +1,76 @@
-import mongoose from "mongoose";
+import db from "../config/sqlite.js";
 
-const productSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true
+const Product = {
+    getAll() {
+        return db
+            .prepare(`
+                SELECT
+                    id,
+                    name,
+                    category,
+                    description,
+                    image,
+                    price,
+                    rating,
+                    badge,
+                    created_at AS createdAt,
+                    updated_at AS updatedAt
+                FROM products
+                ORDER BY id ASC
+            `)
+            .all();
     },
 
-    category: {
-      type: String,
-      required: true
+    getById(id) {
+        return db
+            .prepare(`
+                SELECT
+                    id,
+                    name,
+                    category,
+                    description,
+                    image,
+                    price,
+                    rating,
+                    badge,
+                    created_at AS createdAt,
+                    updated_at AS updatedAt
+                FROM products
+                WHERE id = ?
+            `)
+            .get(id);
     },
 
-    description: {
-      type: String,
-      required: true
+    create(product) {
+        const statement = db.prepare(`
+            INSERT INTO products (
+                name,
+                category,
+                description,
+                image,
+                price,
+                rating,
+                badge
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        const result = statement.run(
+            product.name,
+            product.category,
+            product.description,
+            product.image,
+            product.price,
+            product.rating ?? 5,
+            product.badge ?? "NEW"
+        );
+
+        return this.getById(result.lastInsertRowid);
     },
 
-    image: {
-      type: String,
-      required: true
-    },
-
-    price: {
-      type: Number,
-      required: true
-    },
-
-    rating: {
-      type: Number,
-      default: 5
-    },
-
-    badge: {
-      type: String,
-      default: "NEW"
+    deleteAll() {
+        return db.prepare(`DELETE FROM products`).run();
     }
-  },
-  {
-    timestamps: true
-  }
-);
+};
 
-export default mongoose.model("Product", productSchema);
+export default Product;

@@ -8,3 +8,8 @@ export const getProducts = async () => {
     const { data } = await API.get("/products");
     return data;
 };
+
+export const createOrder = async (orderData) => {
+    const { data } = await API.post("/orders", orderData);
+    return data;
+};
