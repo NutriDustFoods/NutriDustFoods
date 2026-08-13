@@ -1,14 +1,31 @@
 import express from "express";
 
 import {
-    initializeOrderPayment
+    initializeOrderPayment,
+    verifyOrderPayment
 } from "../controllers/paymentController.js";
 
 const router = express.Router();
 
 
-// Initialize payment for an order
-router.post("/initialize", initializeOrderPayment);
+// =====================================================
+// INITIALIZE PAYMENT
+// =====================================================
+
+router.post(
+    "/initialize",
+    initializeOrderPayment
+);
+
+
+// =====================================================
+// VERIFY PAYMENT
+// =====================================================
+
+router.get(
+    "/verify/:reference",
+    verifyOrderPayment
+);
 
 
 export default router;

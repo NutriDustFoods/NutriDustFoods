@@ -1,127 +1,277 @@
 import { getProducts } from "../services/api.js";
 import { createStars } from "../utils/rating.js";
 
+
+// =====================================================
+// API SERVER
+// =====================================================
+
+const API_BASE_URL =
+    "http://localhost:5000";
+
+
+// =====================================================
+// PRODUCT IMAGE URL
+// =====================================================
+
+function getProductImageUrl(image) {
+
+    if (!image) {
+
+        return "";
+
+    }
+
+
+    // If the backend ever returns a complete URL
+    if (
+        image.startsWith("http://") ||
+        image.startsWith("https://")
+    ) {
+
+        return image;
+
+    }
+
+
+    // Backend returns paths such as:
+    // /uploads/products/example.png
+
+    return `${API_BASE_URL}${image}`;
+
+}
+
+
+// =====================================================
+// PRODUCTS
+// =====================================================
+
 export async function Products() {
 
-    const products = await getProducts();
+    const products =
+        await getProducts();
 
-    console.log(products);
 
-    const cards = products.map(product => `
+    console.log(
+        "Customer products:",
+        products
+    );
 
-    <div class="col-lg-4 col-md-6">
 
-        <div class="card product-card h-100">
+    const cards =
+        products.map(product => {
 
-            <div class="position-relative">
+            const imageUrl =
+                getProductImageUrl(
+                    product.image
+                );
 
-                <img
-                    src="/products/${product.image}"
-                    class="card-img-top"
-                    alt="${product.name}">
 
-                <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-3">
+            return `
 
-                    ${product.badge}
+                <div class="col-lg-4 col-md-6">
 
-                </span>
+                    <div class="card product-card h-100">
 
-            </div>
+                        <div class="position-relative">
 
-            <div class="card-body">
+                            ${
+                                imageUrl
+                                    ? `
 
-                <span class="badge bg-secondary">
+                                        <img
+                                            src="${imageUrl}"
+                                            class="card-img-top"
+                                            alt="${product.name}"
+                                            style="
+                                                width:100%;
+                                                height:280px;
+                                                object-fit:cover;
+                                            "
+                                        >
 
-                    ${product.category}
+                                    `
+                                    : `
 
-                </span>
+                                        <div
+                                            class="d-flex align-items-center justify-content-center bg-light"
+                                            style="
+                                                width:100%;
+                                                height:280px;
+                                            "
+                                        >
 
-                <h4 class="mt-3">
+                                            <i
+                                                class="bi bi-image text-muted"
+                                                style="
+                                                    font-size:50px;
+                                                "
+                                            ></i>
 
-                    ${product.name}
+                                        </div>
 
-                </h4>
+                                    `
+                            }
 
-                <div class="mb-3">
 
-                    ${createStars(product.rating)}
+                            <span
+                                class="badge bg-warning text-dark position-absolute top-0 start-0 m-3"
+                            >
+
+                                ${product.badge || "NEW"}
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="card-body">
+
+
+                            <!-- CATEGORY -->
+
+                            <span
+                                class="badge bg-secondary"
+                            >
+
+                                ${product.category || ""}
+
+                            </span>
+
+
+                            <!-- PRODUCT NAME -->
+
+                            <h4 class="mt-3">
+
+                                ${product.name}
+
+                            </h4>
+
+
+                            <!-- RATING -->
+
+                            <div class="mb-3">
+
+                                ${createStars(
+                                    product.rating
+                                )}
+
+                            </div>
+
+
+                            <!-- DESCRIPTION -->
+
+                            <p>
+
+                                ${product.description || ""}
+
+                            </p>
+
+
+                            <!-- PRICE -->
+
+                            <h3
+                                class="text-warning fw-bold"
+                            >
+
+                                ₦${Number(
+                                    product.price || 0
+                                ).toLocaleString()}
+
+                            </h3>
+
+
+                            <!-- BUTTONS -->
+
+                            <div
+                                class="d-grid gap-2"
+                            >
+
+                                <button
+                                    class="btn btn-warning view-product"
+                                    data-id="${product.id}"
+                                >
+
+                                    View Details
+
+                                </button>
+
+
+                                <button
+                                    class="btn btn-success add-to-cart"
+                                    data-id="${product.id}"
+                                >
+
+                                    <i
+                                        class="bi bi-cart-plus"
+                                    ></i>
+
+                                    Add to Cart
+
+                                </button>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-                <p>
+            `;
 
-                    ${product.description}
+        }).join("");
 
-                </p>
-
-                <h3 class="text-warning fw-bold">
-
-                    ₦${Number(product.price).toLocaleString()}
-
-                </h3>
-
-                <div class="d-grid gap-2">
-
-                    <button
-                        class="btn btn-warning view-product"
-                        data-id="${product.id}">
-
-                        View Details
-
-                    </button>
-
-                    <button
-                        class="btn btn-success add-to-cart"
-                        data-id="${product.id}">
-
-                        <i class="bi bi-cart-plus"></i>
-
-                        Add to Cart
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    `).join("");
 
     return `
 
-<section id="products" class="products py-5">
+        <section
+            id="products"
+            class="products py-5"
+        >
 
-<div class="container">
+            <div class="container">
 
-<div class="text-center mb-5">
 
-<h2 class="display-4 fw-bold text-warning">
+                <!-- SECTION HEADER -->
 
-Featured Products
+                <div
+                    class="text-center mb-5"
+                >
 
-</h2>
+                    <h2
+                        class="display-4 fw-bold text-warning"
+                    >
 
-<p class="text-light">
+                        Featured Products
 
-Explore our premium range of nutritious products.
+                    </h2>
 
-</p>
 
-</div>
+                    <p class="text-light">
 
-<div class="row g-4">
+                        Explore our premium range
+                        of nutritious products.
 
-${cards}
+                    </p>
 
-</div>
+                </div>
 
-</div>
 
-</section>
+                <!-- PRODUCTS -->
 
-`;
+                <div class="row g-4">
+
+                    ${cards}
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    `;
 
 }

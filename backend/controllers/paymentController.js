@@ -1,8 +1,15 @@
 import db from "../config/sqlite.js";
-import { initializePayment } from "../services/paystackService.js";
+
+import {
+    initializePayment,
+    verifyPayment
+} from "../services/paystackService.js";
 
 
-// Initialize payment for an existing order
+// =====================================================
+// INITIALIZE ORDER PAYMENT
+// =====================================================
+
 export const initializeOrderPayment = async (req, res) => {
 
     try {
@@ -44,7 +51,7 @@ export const initializeOrderPayment = async (req, res) => {
         }
 
 
-        // Prevent payment for an already paid order
+        // Prevent payment for an already-paid order
         if (order.payment_status === "paid") {
 
             return res.status(400).json({
@@ -59,16 +66,21 @@ export const initializeOrderPayment = async (req, res) => {
 
 
         // Customer email
-        const email = order.customer_email;
+        const email =
+            order.customer_email;
 
 
         // Convert Naira to Kobo
-        const amount = Math.round(
-            Number(order.total_amount) * 100
-        );
+        const amount =
+            Math.round(
+                Number(order.total_amount) * 100
+            );
 
 
-        if (!Number.isFinite(amount) || amount <= 0) {
+        if (
+            !Number.isFinite(amount) ||
+            amount <= 0
+        ) {
 
             return res.status(400).json({
 
@@ -81,7 +93,7 @@ export const initializeOrderPayment = async (req, res) => {
         }
 
 
-        // Create a unique payment reference
+        // Create unique payment reference
         const reference =
             `NUTRIDUST-${order.id}-${Date.now()}`;
 
@@ -102,7 +114,7 @@ export const initializeOrderPayment = async (req, res) => {
         );
 
 
-        // Initialize Paystack
+        // Initialize Paystack payment
         const payment =
             await initializePayment({
 
@@ -135,12 +147,12 @@ export const initializeOrderPayment = async (req, res) => {
         }
 
 
-        // Get Paystack reference
+        // Paystack reference
         const paystackReference =
             payment.data.reference;
 
 
-        // Save Paystack reference against the order
+        // Save payment reference
         db.prepare(`
             UPDATE orders
             SET
@@ -160,7 +172,6 @@ export const initializeOrderPayment = async (req, res) => {
         );
 
 
-        // Return payment information to frontend
         res.status(200).json({
 
             success: true,
@@ -198,6 +209,254 @@ export const initializeOrderPayment = async (req, res) => {
             message:
                 error.message ||
                 "Unable to initialize payment."
+
+        });
+
+    }
+
+};
+
+
+
+// =====================================================
+// VERIFY ORDER PAYMENT
+// =====================================================
+
+export const verifyOrderPayment = async (req, res) => {
+
+    try {
+
+        const { reference } = req.params;
+
+
+        if (!reference) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Payment reference is required."
+
+            });
+
+        }
+
+
+        console.log(
+            "🔍 Verifying Paystack payment:",
+            reference
+        );
+
+
+        // Verify transaction with Paystack
+        const payment =
+            await verifyPayment(reference);
+
+
+        if (
+            !payment ||
+            !payment.status ||
+            !payment.data
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Unable to verify payment."
+
+            });
+
+        }
+
+
+        const transaction =
+            payment.data;
+
+
+        // Find order using Paystack reference
+        const order = db.prepare(`
+            SELECT *
+            FROM orders
+            WHERE payment_reference = ?
+        `).get(reference);
+
+
+        if (!order) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "Order associated with this payment was not found."
+
+            });
+
+        }
+
+
+        // Amount paid by Paystack is in Kobo
+        const paidAmount =
+            Number(transaction.amount);
+
+
+        // Expected order amount in Kobo
+        const expectedAmount =
+            Math.round(
+                Number(order.total_amount) * 100
+            );
+
+
+        // Verify the amount
+        if (
+            !Number.isFinite(paidAmount) ||
+            paidAmount !== expectedAmount
+        ) {
+
+            console.error(
+                "❌ Payment amount mismatch:",
+                {
+                    orderId: order.id,
+                    expectedAmount,
+                    paidAmount
+                }
+            );
+
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Payment amount does not match the order amount."
+
+            });
+
+        }
+
+
+        // Check transaction status
+        if (
+            transaction.status !== "success"
+        ) {
+
+            // Update payment status
+            db.prepare(`
+                UPDATE orders
+                SET
+                    payment_status = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(
+                transaction.status ||
+                    "failed",
+                order.id
+            );
+
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Payment was not successful.",
+
+                paymentStatus:
+                    transaction.status
+
+            });
+
+        }
+
+
+        // =================================================
+        // PAYMENT SUCCESSFUL
+        // =================================================
+
+        db.prepare(`
+            UPDATE orders
+            SET
+                payment_status = 'paid',
+                order_status = 'processing',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `).run(order.id);
+
+
+        // Get updated order
+        const updatedOrder =
+            db.prepare(`
+                SELECT *
+                FROM orders
+                WHERE id = ?
+            `).get(order.id);
+
+
+        console.log(
+            "✅ Payment verified successfully:",
+            {
+                orderId:
+                    updatedOrder.id,
+
+                reference:
+                    updatedOrder.payment_reference,
+
+                amount:
+                    updatedOrder.total_amount
+            }
+        );
+
+
+        res.status(200).json({
+
+            success: true,
+
+            message:
+                "Payment verified successfully.",
+
+            order:
+                updatedOrder,
+
+            transaction: {
+
+                reference:
+                    transaction.reference,
+
+                status:
+                    transaction.status,
+
+                amount:
+                    transaction.amount,
+
+                paidAt:
+                    transaction.paid_at,
+
+                channel:
+                    transaction.channel
+
+            }
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Payment Verification Error:",
+            error
+        );
+
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to verify payment."
 
         });
 

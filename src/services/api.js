@@ -5,7 +5,10 @@ const API = axios.create({
 });
 
 
-// Get all products
+// =====================================================
+// GET PRODUCTS
+// =====================================================
+
 export const getProducts = async () => {
 
     const { data } =
@@ -16,7 +19,10 @@ export const getProducts = async () => {
 };
 
 
-// Create a new order
+// =====================================================
+// CREATE ORDER
+// =====================================================
+
 export const createOrder = async (orderData) => {
 
     const { data } =
@@ -30,7 +36,10 @@ export const createOrder = async (orderData) => {
 };
 
 
-// Initialize Paystack payment
+// =====================================================
+// INITIALIZE PAYSTACK PAYMENT
+// =====================================================
+
 export const initializePayment = async (orderId) => {
 
     const { data } =
@@ -39,6 +48,22 @@ export const initializePayment = async (orderId) => {
             {
                 orderId
             }
+        );
+
+    return data;
+
+};
+
+
+// =====================================================
+// VERIFY PAYSTACK PAYMENT
+// =====================================================
+
+export const verifyPayment = async (reference) => {
+
+    const { data } =
+        await API.get(
+            `/payments/verify/${encodeURIComponent(reference)}`
         );
 
     return data;

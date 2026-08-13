@@ -68,7 +68,49 @@ const Product = {
         return this.getById(result.lastInsertRowid);
     },
 
-    deleteAll() {
+    update(id, product) {
+
+    const statement = db.prepare(`
+        UPDATE products
+        SET
+            name = ?,
+            category = ?,
+            description = ?,
+            image = ?,
+            price = ?,
+            rating = ?,
+            badge = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    `);
+
+    statement.run(
+        product.name,
+        product.category,
+        product.description,
+        product.image,
+        product.price,
+        product.rating ?? 5,
+        product.badge ?? "NEW",
+        id
+    );
+
+    return this.getById(id);
+},
+
+
+deleteById(id) {
+
+    return db
+        .prepare(
+            `DELETE FROM products WHERE id = ?`
+        )
+        .run(id);
+
+},
+
+
+deleteAll() {
         return db.prepare(`DELETE FROM products`).run();
     }
 };
