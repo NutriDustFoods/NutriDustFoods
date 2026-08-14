@@ -1,6 +1,14 @@
 import * as bootstrap from "bootstrap";
-
 import axios from "axios";
+
+import {
+    logoutAdmin
+} from "./AdminLogin.js";
+
+
+// =====================================================
+// API
+// =====================================================
 
 const API = axios.create({
 
@@ -9,31 +17,12 @@ const API = axios.create({
 });
 
 
-API.interceptors.request.use((config) => {
-
-    const token =
-        localStorage.getItem(
-            "nutridust-admin-token"
-        );
-
-
-    if (token) {
-
-        config.headers.Authorization =
-            `Bearer ${token}`;
-
-    }
-
-
-    return config;
-
-});
-
 // =====================================================
-// ATTACH ADMIN JWT TO EVERY API REQUEST
+// ADMIN JWT
 // =====================================================
 
 API.interceptors.request.use(
+
     (config) => {
 
         const token =
@@ -51,40 +40,13 @@ API.interceptors.request.use(
         return config;
 
     },
+
     (error) => {
 
         return Promise.reject(error);
 
     }
-);
 
-// =====================================================
-// ATTACH ADMIN JWT TO REQUESTS
-// =====================================================
-
-API.interceptors.request.use(
-    (config) => {
-
-        const token =
-            localStorage.getItem(
-                "nutridust-admin-token"
-            );
-
-        if (token) {
-
-            config.headers.Authorization =
-                `Bearer ${token}`;
-
-        }
-
-        return config;
-
-    },
-    (error) => {
-
-        return Promise.reject(error);
-
-    }
 );
 
 
@@ -102,66 +64,68 @@ export function AdminDashboard() {
 
             <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <div>
+                <div>
 
-        <h1 class="fw-bold mb-1">
+                    <h1 class="fw-bold mb-1">
 
-            <i class="bi bi-speedometer2 me-2"></i>
+                        <i class="bi bi-speedometer2 me-2"></i>
 
-            NutriDust Admin
+                        NutriDust Admin
 
-        </h1>
+                    </h1>
 
-        <p class="text-muted mb-0">
+                    <p class="text-muted mb-0">
 
-            Order Management Dashboard
+                        Order Management Dashboard
 
-        </p>
+                    </p>
 
-    </div>
-
-
-    <div class="d-flex align-items-center gap-2">
-
-        <div class="text-end me-2">
-
-            <small class="text-muted d-block">
-                Logged in as
-            </small>
-
-            <strong>
-                Admin
-            </strong>
-
-        </div>
+                </div>
 
 
-        <button
-            class="btn btn-dark"
-            id="refreshOrdersButton"
-        >
+                <div class="d-flex align-items-center gap-2">
 
-            <i class="bi bi-arrow-clockwise me-2"></i>
+                    <div class="text-end me-2">
 
-            Refresh
+                        <small class="text-muted d-block">
+                            Logged in as
+                        </small>
 
-        </button>
+                        <strong>
+                            Admin
+                        </strong>
+
+                    </div>
 
 
-        <button
-            class="btn btn-outline-danger"
-            id="adminLogoutButton"
-        >
+                    <button
+                        type="button"
+                        class="btn btn-dark"
+                        id="refreshOrdersButton"
+                    >
 
-            <i class="bi bi-box-arrow-right me-2"></i>
+                        <i class="bi bi-arrow-clockwise me-2"></i>
 
-            Logout
+                        Refresh
 
-        </button>
+                    </button>
 
-    </div>
 
-</div>
+                    <button
+                        type="button"
+                        class="btn btn-outline-danger"
+                        id="adminLogoutButton"
+                    >
+
+                        <i class="bi bi-box-arrow-right me-2"></i>
+
+                        Logout
+
+                    </button>
+
+                </div>
+
+            </div>
 
 
             <!-- STATISTICS -->
@@ -554,7 +518,6 @@ export async function loadAdminOrders() {
 
         return orders;
 
-
     } catch (error) {
 
         console.error(
@@ -656,28 +619,60 @@ function renderStatistics(
             );
 
 
-    document.getElementById(
-        "totalOrders"
-    ).textContent =
-        totalOrders;
+    const totalOrdersElement =
+        document.getElementById(
+            "totalOrders"
+        );
 
 
-    document.getElementById(
-        "totalSales"
-    ).textContent =
-        `₦${totalSales.toLocaleString()}`;
+    const totalSalesElement =
+        document.getElementById(
+            "totalSales"
+        );
 
 
-    document.getElementById(
-        "paidOrders"
-    ).textContent =
-        paidOrders;
+    const paidOrdersElement =
+        document.getElementById(
+            "paidOrders"
+        );
 
 
-    document.getElementById(
-        "pendingOrders"
-    ).textContent =
-        pendingOrders;
+    const pendingOrdersElement =
+        document.getElementById(
+            "pendingOrders"
+        );
+
+
+    if (totalOrdersElement) {
+
+        totalOrdersElement.textContent =
+            totalOrders;
+
+    }
+
+
+    if (totalSalesElement) {
+
+        totalSalesElement.textContent =
+            `₦${totalSales.toLocaleString()}`;
+
+    }
+
+
+    if (paidOrdersElement) {
+
+        paidOrdersElement.textContent =
+            paidOrders;
+
+    }
+
+
+    if (pendingOrdersElement) {
+
+        pendingOrdersElement.textContent =
+            pendingOrders;
+
+    }
 
 }
 
@@ -749,7 +744,7 @@ function renderOrders(
 
                     <td>
                         <strong>
-                            #${order.id}
+                            #${escapeHtml(order.id)}
                         </strong>
                     </td>
 
@@ -775,7 +770,7 @@ function renderOrders(
 
                         <strong>
                             ₦${Number(
-                                order.total
+                                order.total || 0
                             ).toLocaleString()}
                         </strong>
 
@@ -810,8 +805,9 @@ function renderOrders(
                     <td>
 
                         <button
+                            type="button"
                             class="btn btn-sm btn-dark view-admin-order"
-                            data-order-id="${order.id}"
+                            data-order-id="${escapeHtml(order.id)}"
                         >
 
                             <i class="bi bi-eye me-1"></i>
@@ -868,7 +864,7 @@ function paymentBadge(
 
 
 // =====================================================
-// ORDER STATUS BADGE
+// STATUS BADGE
 // =====================================================
 
 function statusBadge(
@@ -1058,8 +1054,6 @@ async function showOrder(
             <div class="row g-4">
 
 
-                <!-- CUSTOMER -->
-
                 <div class="col-md-6">
 
                     <h6 class="fw-bold">
@@ -1069,32 +1063,47 @@ async function showOrder(
                     <div class="bg-light rounded p-3">
 
                         <p class="mb-2">
-                            <strong>Name:</strong>
+
+                            <strong>
+                                Name:
+                            </strong>
+
                             ${escapeHtml(
                                 order.customerName
                             )}
+
                         </p>
 
+
                         <p class="mb-2">
-                            <strong>Phone:</strong>
+
+                            <strong>
+                                Phone:
+                            </strong>
+
                             ${escapeHtml(
                                 order.customerPhone
                             )}
+
                         </p>
 
+
                         <p class="mb-0">
-                            <strong>Email:</strong>
+
+                            <strong>
+                                Email:
+                            </strong>
+
                             ${escapeHtml(
                                 order.customerEmail
                             )}
+
                         </p>
 
                     </div>
 
                 </div>
 
-
-                <!-- DELIVERY -->
 
                 <div class="col-md-6">
 
@@ -1112,8 +1121,6 @@ async function showOrder(
 
                 </div>
 
-
-                <!-- PRODUCTS -->
 
                 <div class="col-12">
 
@@ -1149,6 +1156,7 @@ async function showOrder(
 
                             </thead>
 
+
                             <tbody>
 
                                 ${
@@ -1165,23 +1173,23 @@ async function showOrder(
 
                                                 <td>
                                                     ₦${Number(
-                                                        item.price
+                                                        item.price || 0
                                                     ).toLocaleString()}
                                                 </td>
 
                                                 <td>
                                                     ${Number(
-                                                        item.quantity
+                                                        item.quantity || 0
                                                     )}
                                                 </td>
 
                                                 <td>
                                                     ₦${(
                                                         Number(
-                                                            item.price
+                                                            item.price || 0
                                                         ) *
                                                         Number(
-                                                            item.quantity
+                                                            item.quantity || 0
                                                         )
                                                     ).toLocaleString()}
                                                 </td>
@@ -1200,8 +1208,6 @@ async function showOrder(
 
                 </div>
 
-
-                <!-- PAYMENT -->
 
                 <div class="col-md-6">
 
@@ -1223,6 +1229,7 @@ async function showOrder(
 
                         </p>
 
+
                         <p class="mb-0">
 
                             <strong>
@@ -1230,10 +1237,12 @@ async function showOrder(
                             </strong>
 
                             <small class="d-block text-break mt-1">
+
                                 ${escapeHtml(
                                     order.paymentReference ||
                                     "—"
                                 )}
+
                             </small>
 
                         </p>
@@ -1242,8 +1251,6 @@ async function showOrder(
 
                 </div>
 
-
-                <!-- STATUS -->
 
                 <div class="col-md-6">
 
@@ -1266,8 +1273,9 @@ async function showOrder(
 
 
                         <button
+                            type="button"
                             id="updateOrderStatusButton"
-                            data-order-id="${order.id}"
+                            data-order-id="${escapeHtml(order.id)}"
                             class="btn btn-dark w-100 mt-3"
                         >
 
@@ -1282,8 +1290,6 @@ async function showOrder(
                 </div>
 
 
-                <!-- TOTAL -->
-
                 <div class="col-12">
 
                     <div class="border-top pt-3">
@@ -1296,7 +1302,7 @@ async function showOrder(
 
                             <strong class="fs-4">
                                 ₦${Number(
-                                    order.total
+                                    order.total || 0
                                 ).toLocaleString()}
                             </strong>
 
@@ -1311,11 +1317,15 @@ async function showOrder(
         `;
 
 
-        document
-            .getElementById(
+        const updateButton =
+            document.getElementById(
                 "updateOrderStatusButton"
-            )
-            .addEventListener(
+            );
+
+
+        if (updateButton) {
+
+            updateButton.addEventListener(
                 "click",
                 () => {
 
@@ -1325,6 +1335,8 @@ async function showOrder(
 
                 }
             );
+
+        }
 
 
     } catch (error) {
@@ -1338,9 +1350,11 @@ async function showOrder(
         details.innerHTML = `
 
             <div class="alert alert-danger">
+
                 ${escapeHtml(
                     error.message
                 )}
+
             </div>
 
         `;
@@ -1402,7 +1416,7 @@ function statusOptions(
 
 
 // =====================================================
-// UPDATE STATUS
+// UPDATE ORDER STATUS
 // =====================================================
 
 async function updateOrderStatus(
@@ -1437,8 +1451,16 @@ async function updateOrderStatus(
         button.disabled =
             true;
 
-        button.textContent =
-            "Updating...";
+
+        button.innerHTML = `
+
+            <span
+                class="spinner-border spinner-border-sm me-2"
+            ></span>
+
+            Updating...
+
+        `;
 
 
         const response =
@@ -1501,8 +1523,14 @@ async function updateOrderStatus(
         button.disabled =
             false;
 
-        button.textContent =
-            "Update Status";
+
+        button.innerHTML = `
+
+            <i class="bi bi-check2-circle me-2"></i>
+
+            Update Status
+
+        `;
 
     }
 
@@ -1681,6 +1709,64 @@ export function setupAdminRefresh() {
 
 
 // =====================================================
+// ADMIN LOGOUT
+// =====================================================
+
+export function setupAdminLogout() {
+
+    const button =
+        document.getElementById(
+            "adminLogoutButton"
+        );
+
+
+    if (!button) {
+
+        console.error(
+            "❌ Admin logout button not found."
+        );
+
+        return;
+
+    }
+
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            const confirmed =
+                window.confirm(
+                    "Are you sure you want to logout?"
+                );
+
+
+            if (!confirmed) {
+
+                return;
+
+            }
+
+
+            console.log(
+                "🔓 Logging out admin..."
+            );
+
+
+            logoutAdmin();
+
+        }
+    );
+
+
+    console.log(
+        "✅ Admin logout button is active."
+    );
+
+}
+
+
+// =====================================================
 // FORMAT DATE
 // =====================================================
 
@@ -1746,41 +1832,5 @@ function escapeHtml(
             /'/g,
             "&#039;"
         );
-
-}
-
-// =====================================================
-// ADMIN LOGOUT
-// =====================================================
-
-export function setupAdminLogout() {
-
-    const button =
-        document.getElementById(
-            "adminLogoutButton"
-        );
-
-
-    button?.addEventListener(
-        "click",
-        () => {
-
-            const confirmed =
-                confirm(
-                    "Are you sure you want to logout?"
-                );
-
-
-            if (!confirmed) {
-
-                return;
-
-            }
-
-
-            logoutAdmin();
-
-        }
-    );
 
 }
