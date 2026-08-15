@@ -1,6 +1,11 @@
 import axios from "axios";
 import * as bootstrap from "bootstrap";
 
+
+// =====================================================
+// API
+// =====================================================
+
 const API = axios.create({
     baseURL: "http://localhost:5000/api"
 });
@@ -28,6 +33,13 @@ API.interceptors.request.use((config) => {
 
 
 // =====================================================
+// INVENTORY CACHE
+// =====================================================
+
+let inventoryData = [];
+
+
+// =====================================================
 // ADMIN PRODUCTS HTML
 // =====================================================
 
@@ -45,13 +57,13 @@ export function AdminProducts() {
 
                         <i class="bi bi-box-seam me-2"></i>
 
-                        Products
+                        Products & Inventory
 
                     </h2>
 
                     <p class="text-muted mb-0">
 
-                        Manage NutriDust Foods products
+                        Manage NutriDust Foods products and stock
 
                     </p>
 
@@ -96,9 +108,13 @@ export function AdminProducts() {
 
                                     <th>Price</th>
 
-                                    <th>Rating</th>
+                                    <th>Produced</th>
 
-                                    <th>Badge</th>
+                                    <th>Sold</th>
+
+                                    <th>Available</th>
+
+                                    <th>Status</th>
 
                                     <th>Action</th>
 
@@ -112,7 +128,7 @@ export function AdminProducts() {
                                 <tr>
 
                                     <td
-                                        colspan="7"
+                                        colspan="9"
                                         class="text-center py-5"
                                     >
 
@@ -149,9 +165,6 @@ export function AdminProducts() {
 
                 <div class="modal-content">
 
-
-                    <!-- HEADER -->
-
                     <div class="modal-header">
 
                         <h5
@@ -173,8 +186,6 @@ export function AdminProducts() {
                     </div>
 
 
-                    <!-- BODY -->
-
                     <div class="modal-body">
 
                         <form id="adminProductForm">
@@ -192,14 +203,11 @@ export function AdminProducts() {
 
                                 <div class="col-md-6">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Product Name
 
                                     </label>
-
 
                                     <input
                                         type="text"
@@ -215,14 +223,11 @@ export function AdminProducts() {
 
                                 <div class="col-md-6">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Category
 
                                     </label>
-
 
                                     <input
                                         type="text"
@@ -238,14 +243,11 @@ export function AdminProducts() {
 
                                 <div class="col-12">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Description
 
                                     </label>
-
 
                                     <textarea
                                         id="productDescription"
@@ -256,18 +258,15 @@ export function AdminProducts() {
                                 </div>
 
 
-                                <!-- PRODUCT IMAGE -->
+                                <!-- IMAGE -->
 
                                 <div class="col-md-6">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Product Image
 
                                     </label>
-
 
                                     <input
                                         type="file"
@@ -275,7 +274,6 @@ export function AdminProducts() {
                                         class="form-control"
                                         accept="image/*"
                                     >
-
 
                                     <div
                                         id="productImagePreview"
@@ -289,14 +287,11 @@ export function AdminProducts() {
 
                                 <div class="col-md-6">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Price (₦)
 
                                     </label>
-
 
                                     <input
                                         type="number"
@@ -313,14 +308,11 @@ export function AdminProducts() {
 
                                 <div class="col-md-6">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Rating
 
                                     </label>
-
 
                                     <input
                                         type="number"
@@ -339,14 +331,11 @@ export function AdminProducts() {
 
                                 <div class="col-md-6">
 
-                                    <label
-                                        class="form-label fw-semibold"
-                                    >
+                                    <label class="form-label fw-semibold">
 
                                         Badge
 
                                     </label>
-
 
                                     <input
                                         type="text"
@@ -360,8 +349,6 @@ export function AdminProducts() {
 
                             </div>
 
-
-                            <!-- BUTTONS -->
 
                             <div
                                 class="d-flex justify-content-end gap-2 mt-4"
@@ -401,6 +388,283 @@ export function AdminProducts() {
 
         </div>
 
+
+        <!-- ================================================= -->
+        <!-- INVENTORY MANAGEMENT MODAL -->
+        <!-- ================================================= -->
+
+        <div
+            class="modal fade"
+            id="inventoryModal"
+            tabindex="-1"
+        >
+
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+
+                <div class="modal-content">
+
+
+                    <div class="modal-header bg-dark text-white">
+
+                        <div>
+
+                            <h5
+                                class="modal-title fw-bold"
+                                id="inventoryModalTitle"
+                            >
+
+                                Manage Inventory
+
+                            </h5>
+
+                            <small
+                                id="inventoryModalSubtitle"
+                                class="text-secondary"
+                            ></small>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+
+                    </div>
+
+
+                    <div class="modal-body">
+
+
+                        <!-- INVENTORY SUMMARY -->
+
+                        <div
+                            id="inventorySummary"
+                            class="row g-3 mb-4"
+                        ></div>
+
+
+                        <!-- ADD PRODUCTION -->
+
+                        <div class="card border-success mb-4">
+
+                            <div class="card-body">
+
+                                <h5 class="fw-bold text-success">
+
+                                    <i class="bi bi-plus-circle me-2"></i>
+
+                                    Add Processed Products
+
+                                </h5>
+
+                                <p class="text-muted">
+
+                                    Enter the number of new units produced
+                                    and added to stock.
+
+                                </p>
+
+
+                                <div class="row g-3">
+
+                                    <div class="col-md-6">
+
+                                        <label
+                                            class="form-label fw-semibold"
+                                        >
+
+                                            Quantity Produced
+
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            id="productionQuantity"
+                                            class="form-control"
+                                            placeholder="e.g. 100"
+                                        >
+
+                                    </div>
+
+
+                                    <div class="col-md-6">
+
+                                        <label
+                                            class="form-label fw-semibold"
+                                        >
+
+                                            Note
+
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            id="productionNote"
+                                            class="form-control"
+                                            placeholder="e.g. Production batch #001"
+                                        >
+
+                                    </div>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    class="btn btn-success mt-3"
+                                    id="addProductionButton"
+                                >
+
+                                    <i class="bi bi-plus-circle me-2"></i>
+
+                                    Add Production
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- MANUAL ADJUSTMENT -->
+
+                        <div class="card border-warning mb-4">
+
+                            <div class="card-body">
+
+                                <h5 class="fw-bold text-warning">
+
+                                    <i class="bi bi-sliders me-2"></i>
+
+                                    Manual Stock Adjustment
+
+                                </h5>
+
+                                <p class="text-muted">
+
+                                    Use a positive number to add stock or a
+                                    negative number to remove stock.
+
+                                </p>
+
+
+                                <div class="row g-3">
+
+                                    <div class="col-md-6">
+
+                                        <label
+                                            class="form-label fw-semibold"
+                                        >
+
+                                            Adjustment
+
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            id="adjustmentQuantity"
+                                            class="form-control"
+                                            placeholder="e.g. -5 or 20"
+                                        >
+
+                                    </div>
+
+
+                                    <div class="col-md-6">
+
+                                        <label
+                                            class="form-label fw-semibold"
+                                        >
+
+                                            Reason
+
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            id="adjustmentNote"
+                                            class="form-control"
+                                            placeholder="Damaged, missing, correction..."
+                                        >
+
+                                    </div>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    class="btn btn-warning mt-3"
+                                    id="adjustInventoryButton"
+                                >
+
+                                    <i class="bi bi-sliders me-2"></i>
+
+                                    Adjust Stock
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- HISTORY -->
+
+                        <div class="card border-0 bg-light">
+
+                            <div class="card-body">
+
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-3"
+                                >
+
+                                    <h5 class="fw-bold mb-0">
+
+                                        <i class="bi bi-clock-history me-2"></i>
+
+                                        Inventory History
+
+                                    </h5>
+
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-dark"
+                                        id="refreshInventoryHistoryButton"
+                                    >
+
+                                        <i class="bi bi-arrow-clockwise"></i>
+
+                                    </button>
+
+                                </div>
+
+
+                                <div
+                                    id="inventoryHistory"
+                                    class="table-responsive"
+                                >
+
+                                    Loading history...
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     `;
 
 }
@@ -417,25 +681,38 @@ export async function loadAdminProducts() {
             "adminProductsTableBody"
         );
 
-
     if (!tbody) return;
 
 
     try {
 
-        const response =
-            await API.get(
-                "/admin/products"
-            );
+        const [
+            productsResponse,
+            inventoryResponse
+        ] = await Promise.all([
+
+            API.get("/admin/products"),
+
+            API.get("/admin/inventory")
+
+        ]);
 
 
-        const data =
-            response.data;
+        const productsData =
+            productsResponse.data;
+
+        const inventoryResult =
+            inventoryResponse.data;
 
 
         const products =
-            data.products ||
-            data ||
+            productsData.products ||
+            productsData ||
+            [];
+
+
+        inventoryData =
+            inventoryResult.inventory ||
             [];
 
 
@@ -455,7 +732,7 @@ export async function loadAdminProducts() {
                 <tr>
 
                     <td
-                        colspan="7"
+                        colspan="9"
                         class="text-center text-muted py-5"
                     >
 
@@ -474,6 +751,86 @@ export async function loadAdminProducts() {
 
         tbody.innerHTML =
             products.map(product => {
+
+                const inventory =
+                    inventoryData.find(
+                        item =>
+                            String(item.productId) ===
+                            String(product.id)
+                    );
+
+
+                const produced =
+                    Number(
+                        inventory?.totalProduced || 0
+                    );
+
+
+                const sold =
+                    Number(
+                        inventory?.totalSold || 0
+                    );
+
+
+                const available =
+                    Number(
+                        inventory?.quantityAvailable || 0
+                    );
+
+
+                const threshold =
+                    Number(
+                        inventory?.lowStockThreshold || 10
+                    );
+
+
+                let statusHtml;
+
+
+                if (available <= 0) {
+
+                    statusHtml = `
+
+                        <span class="badge bg-danger">
+
+                            <i class="bi bi-x-circle me-1"></i>
+
+                            Out of Stock
+
+                        </span>
+
+                    `;
+
+                } else if (available <= threshold) {
+
+                    statusHtml = `
+
+                        <span class="badge bg-warning text-dark">
+
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+
+                            Low Stock
+
+                        </span>
+
+                    `;
+
+                } else {
+
+                    statusHtml = `
+
+                        <span class="badge bg-success">
+
+                            <i class="bi bi-check-circle me-1"></i>
+
+                            In Stock
+
+                        </span>
+
+                    `;
+
+                }
+
 
                 const imageUrl =
                     product.image
@@ -521,9 +878,7 @@ export async function loadAdminProducts() {
                                             "
                                         >
 
-                                            <i
-                                                class="bi bi-image text-muted"
-                                            ></i>
+                                            <i class="bi bi-image text-muted"></i>
 
                                         </div>
 
@@ -544,7 +899,6 @@ export async function loadAdminProducts() {
                                 )}
 
                             </strong>
-
 
                             <small class="d-block text-muted">
 
@@ -581,30 +935,61 @@ export async function loadAdminProducts() {
                         </td>
 
 
-                        <!-- RATING -->
+                        <!-- PRODUCED -->
 
                         <td>
 
-                            ⭐ ${
-                                Number(
-                                    product.rating || 0
-                                ).toFixed(1)
-                            }
+                            <span class="fw-bold text-primary">
+
+                                ${produced.toLocaleString()}
+
+                            </span>
 
                         </td>
 
 
-                        <!-- BADGE -->
+                        <!-- SOLD -->
 
                         <td>
 
-                            <span class="badge bg-dark">
+                            <span class="fw-bold text-danger">
 
-                                ${escapeHtml(
-                                    product.badge || "NEW"
-                                )}
+                                ${sold.toLocaleString()}
 
                             </span>
+
+                        </td>
+
+
+                        <!-- AVAILABLE -->
+
+                        <td>
+
+                            <span
+                                class="
+                                    fw-bold
+                                    ${
+                                        available <= 0
+                                            ? "text-danger"
+                                            : available <= threshold
+                                                ? "text-warning"
+                                                : "text-success"
+                                    }
+                                "
+                            >
+
+                                ${available.toLocaleString()}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- STATUS -->
+
+                        <td>
+
+                            ${statusHtml}
 
                         </td>
 
@@ -613,28 +998,44 @@ export async function loadAdminProducts() {
 
                         <td>
 
-                            <button
-                                class="btn btn-sm btn-outline-dark edit-product"
-                                data-id="${product.id}"
-                            >
+                            <div class="d-flex gap-1 flex-wrap">
 
-                                <i class="bi bi-pencil me-1"></i>
+                                <button
+                                    class="btn btn-sm btn-success manage-inventory"
+                                    data-id="${product.id}"
+                                >
 
-                                Edit
+                                    <i class="bi bi-boxes me-1"></i>
 
-                            </button>
+                                    Stock
+
+                                </button>
 
 
-                            <button
-                                class="btn btn-sm btn-outline-danger delete-product"
-                                data-id="${product.id}"
-                            >
+                                <button
+                                    class="btn btn-sm btn-outline-dark edit-product"
+                                    data-id="${product.id}"
+                                >
 
-                                <i class="bi bi-trash me-1"></i>
+                                    <i class="bi bi-pencil me-1"></i>
 
-                                Delete
+                                    Edit
 
-                            </button>
+                                </button>
+
+
+                                <button
+                                    class="btn btn-sm btn-outline-danger delete-product"
+                                    data-id="${product.id}"
+                                >
+
+                                    <i class="bi bi-trash me-1"></i>
+
+                                    Delete
+
+                                </button>
+
+                            </div>
 
                         </td>
 
@@ -652,7 +1053,7 @@ export async function loadAdminProducts() {
     } catch (error) {
 
         console.error(
-            "❌ Product loading error:",
+            "❌ Product/inventory loading error:",
             error
         );
 
@@ -662,11 +1063,11 @@ export async function loadAdminProducts() {
             <tr>
 
                 <td
-                    colspan="7"
+                    colspan="9"
                     class="text-center text-danger py-5"
                 >
 
-                    Unable to load products.
+                    Unable to load products and inventory.
 
                     <br>
 
@@ -694,7 +1095,6 @@ export async function loadAdminProducts() {
 // =====================================================
 
 function attachProductButtons(products) {
-
 
     document
         .querySelectorAll(".edit-product")
@@ -743,6 +1143,812 @@ function attachProductButtons(products) {
 
         });
 
+
+    document
+        .querySelectorAll(".manage-inventory")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    openInventoryModal(
+                        button.dataset.id
+                    );
+
+                }
+            );
+
+        });
+
+}
+
+
+// =====================================================
+// OPEN INVENTORY MODAL
+// =====================================================
+
+async function openInventoryModal(productId) {
+
+    const inventory =
+        inventoryData.find(
+            item =>
+                String(item.productId) ===
+                String(productId)
+        );
+
+
+    if (!inventory) {
+
+        alert(
+            "Inventory record not found."
+        );
+
+        return;
+
+    }
+
+
+    document
+        .getElementById(
+            "inventoryModalTitle"
+        )
+        .textContent =
+            "Manage Inventory";
+
+
+    document
+        .getElementById(
+            "inventoryModalSubtitle"
+        )
+        .textContent =
+            inventory.name;
+
+
+    const summary =
+        document.getElementById(
+            "inventorySummary"
+        );
+
+
+    summary.innerHTML = `
+
+        <div class="col-md-4">
+
+            <div class="card bg-primary text-white border-0">
+
+                <div class="card-body">
+
+                    <small>Total Produced</small>
+
+                    <h3 class="fw-bold mb-0">
+
+                        ${Number(
+                            inventory.totalProduced || 0
+                        ).toLocaleString()}
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="card bg-danger text-white border-0">
+
+                <div class="card-body">
+
+                    <small>Total Sold</small>
+
+                    <h3 class="fw-bold mb-0">
+
+                        ${Number(
+                            inventory.totalSold || 0
+                        ).toLocaleString()}
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="card bg-success text-white border-0">
+
+                <div class="card-body">
+
+                    <small>Available</small>
+
+                    <h3 class="fw-bold mb-0">
+
+                        ${Number(
+                            inventory.quantityAvailable || 0
+                        ).toLocaleString()}
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    // -------------------------------------------------
+    // CLEAR INPUTS
+    // -------------------------------------------------
+
+    document
+        .getElementById(
+            "productionQuantity"
+        )
+        .value = "";
+
+
+    document
+        .getElementById(
+            "productionNote"
+        )
+        .value = "";
+
+
+    document
+        .getElementById(
+            "adjustmentQuantity"
+        )
+        .value = "";
+
+
+    document
+        .getElementById(
+            "adjustmentNote"
+        )
+        .value = "";
+
+
+    // -------------------------------------------------
+    // STORE PRODUCT ID
+    // -------------------------------------------------
+
+    const modal =
+        document.getElementById(
+            "inventoryModal"
+        );
+
+
+    modal.dataset.productId =
+        productId;
+
+
+    await loadInventoryHistory(
+        productId
+    );
+
+
+    bootstrap.Modal
+        .getOrCreateInstance(
+            modal
+        )
+        .show();
+
+}
+
+
+// =====================================================
+// ADD PRODUCTION
+// =====================================================
+
+async function addProduction() {
+
+    const modal =
+        document.getElementById(
+            "inventoryModal"
+        );
+
+
+    const productId =
+        modal?.dataset?.productId;
+
+
+    const quantity =
+        Number(
+            document.getElementById(
+                "productionQuantity"
+            )?.value
+        );
+
+
+    const note =
+        document.getElementById(
+            "productionNote"
+        )?.value?.trim() || "";
+
+
+    if (!productId) {
+
+        alert(
+            "Product not selected."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+    ) {
+
+        alert(
+            "Enter a valid production quantity."
+        );
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "addProductionButton"
+        );
+
+
+    try {
+
+        button.disabled = true;
+
+        button.innerHTML = `
+
+            <span
+                class="spinner-border spinner-border-sm me-2"
+            ></span>
+
+            Adding...
+
+        `;
+
+
+        await API.post(
+            `/admin/inventory/${productId}/production`,
+            {
+                quantity,
+                note
+            }
+        );
+
+
+        alert(
+            "Production quantity added successfully."
+        );
+
+
+        await loadAdminProducts();
+
+
+        await openInventoryModal(
+            productId
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Add production error:",
+            error
+        );
+
+
+        alert(
+            "Unable to add production.\n\n" +
+            (
+                error?.response?.data?.message ||
+                error.message ||
+                "Unknown error"
+            )
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerHTML = `
+
+            <i class="bi bi-plus-circle me-2"></i>
+
+            Add Production
+
+        `;
+
+    }
+
+}
+
+
+// =====================================================
+// ADJUST INVENTORY
+// =====================================================
+
+async function adjustStock() {
+
+    const modal =
+        document.getElementById(
+            "inventoryModal"
+        );
+
+
+    const productId =
+        modal?.dataset?.productId;
+
+
+    const quantity =
+        Number(
+            document.getElementById(
+                "adjustmentQuantity"
+            )?.value
+        );
+
+
+    const note =
+        document.getElementById(
+            "adjustmentNote"
+        )?.value?.trim() || "";
+
+
+    if (!productId) {
+
+        alert(
+            "Product not selected."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !Number.isInteger(quantity) ||
+        quantity === 0
+    ) {
+
+        alert(
+            "Enter a valid adjustment quantity."
+        );
+
+        return;
+
+    }
+
+
+    if (!note) {
+
+        alert(
+            "Please enter a reason for the adjustment."
+        );
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "adjustInventoryButton"
+        );
+
+
+    try {
+
+        button.disabled = true;
+
+        button.innerHTML = `
+
+            <span
+                class="spinner-border spinner-border-sm me-2"
+            ></span>
+
+            Adjusting...
+
+        `;
+
+
+        await API.patch(
+            `/admin/inventory/${productId}/adjust`,
+            {
+                quantity,
+                note
+            }
+        );
+
+
+        alert(
+            "Inventory adjusted successfully."
+        );
+
+
+        await loadAdminProducts();
+
+
+        await openInventoryModal(
+            productId
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Inventory adjustment error:",
+            error
+        );
+
+
+        alert(
+            "Unable to adjust inventory.\n\n" +
+            (
+                error?.response?.data?.message ||
+                error.message ||
+                "Unknown error"
+            )
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerHTML = `
+
+            <i class="bi bi-sliders me-2"></i>
+
+            Adjust Stock
+
+        `;
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD INVENTORY HISTORY
+// =====================================================
+
+async function loadInventoryHistory(productId) {
+
+    const history =
+        document.getElementById(
+            "inventoryHistory"
+        );
+
+
+    if (!history) return;
+
+
+    history.innerHTML = `
+
+        <div class="text-center py-3">
+
+            <span
+                class="spinner-border spinner-border-sm"
+            ></span>
+
+            Loading history...
+
+        </div>
+
+    `;
+
+
+    try {
+
+        const response =
+            await API.get(
+                `/admin/inventory/${productId}/history`
+            );
+
+
+        const data =
+            response.data;
+
+
+        const movements =
+            Array.isArray(data.movements)
+                ? data.movements
+                : [];
+
+
+        if (!movements.length) {
+
+            history.innerHTML = `
+
+                <div class="text-center text-muted py-4">
+
+                    <i class="bi bi-clock-history display-6"></i>
+
+                    <p class="mt-2 mb-0">
+
+                        No inventory movements yet.
+
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        history.innerHTML = `
+
+            <table class="table table-sm align-middle">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Date</th>
+
+                        <th>Type</th>
+
+                        <th>Quantity</th>
+
+                        <th>Note</th>
+
+                        <th>Performed By</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    ${movements.map(
+                        movement => {
+
+                            const quantity =
+                                Number(
+                                    movement.quantity
+                                );
+
+
+                            const positive =
+                                quantity > 0;
+
+
+                            const movementType =
+                                String(
+                                    movement.movementType ||
+                                    ""
+                                ).toLowerCase();
+
+
+                            // -------------------------------------------------
+                            // TYPE BADGE
+                            // -------------------------------------------------
+
+                            let badgeClass =
+                                "bg-secondary";
+
+
+                            let typeIcon =
+                                "bi-arrow-left-right";
+
+
+                            if (
+                                movementType ===
+                                "production"
+                            ) {
+
+                                badgeClass =
+                                    "bg-success";
+
+                                typeIcon =
+                                    "bi-box-seam";
+
+                            } else if (
+                                movementType ===
+                                "sale"
+                            ) {
+
+                                badgeClass =
+                                    "bg-danger";
+
+                                typeIcon =
+                                    "bi-cart-check";
+
+                            } else if (
+                                movementType ===
+                                "reservation"
+                            ) {
+
+                                badgeClass =
+                                    "bg-warning text-dark";
+
+                                typeIcon =
+                                    "bi-clock";
+
+                            } else if (
+                                movementType ===
+                                "adjustment"
+                            ) {
+
+                                badgeClass =
+                                    "bg-warning text-dark";
+
+                                typeIcon =
+                                    "bi-sliders";
+
+                            }
+
+
+                            // -------------------------------------------------
+                            // PERFORMED BY
+                            // -------------------------------------------------
+
+                            const performedBy =
+                                movement.performedBy ||
+                                movement.performed_by ||
+                                "SYSTEM";
+
+
+                            // -------------------------------------------------
+                            // NOTE
+                            // -------------------------------------------------
+
+                            const note =
+                                movement.note ||
+                                "";
+
+
+                            return `
+
+                                <tr>
+
+                                    <!-- DATE -->
+
+                                    <td>
+
+                                        ${formatDate(
+                                            movement.createdAt
+                                        )}
+
+                                    </td>
+
+
+                                    <!-- TYPE -->
+
+                                    <td>
+
+                                        <span
+                                            class="badge ${badgeClass}"
+                                        >
+
+                                            <i
+                                                class="bi ${typeIcon} me-1"
+                                            ></i>
+
+                                            ${escapeHtml(
+                                                movementType ||
+                                                "unknown"
+                                            )}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- QUANTITY -->
+
+                                    <td>
+
+                                        <strong
+                                            class="${
+                                                positive
+                                                    ? "text-success"
+                                                    : "text-danger"
+                                            }"
+                                        >
+
+                                            ${
+                                                positive
+                                                    ? "+"
+                                                    : ""
+                                            }${quantity}
+
+                                        </strong>
+
+                                    </td>
+
+
+                                    <!-- NOTE -->
+
+                                    <td>
+
+                                        ${escapeHtml(
+                                            note
+                                        )}
+
+                                    </td>
+
+
+                                    <!-- PERFORMED BY -->
+
+                                    <td>
+
+                                        <span
+                                            class="fw-semibold"
+                                        >
+
+                                            <i
+                                                class="bi bi-person-circle me-1"
+                                            ></i>
+
+                                            ${escapeHtml(
+                                                performedBy
+                                            )}
+
+                                        </span>
+
+                                    </td>
+
+                                </tr>
+
+                            `;
+
+                        }
+                    ).join("")}
+
+                </tbody>
+
+            </table>
+
+        `;
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Inventory history error:",
+            error
+        );
+
+
+        history.innerHTML = `
+
+            <div class="alert alert-danger">
+
+                Unable to load inventory history.
+
+                <br>
+
+                <small>
+
+                    ${escapeHtml(
+                        error?.response?.data?.message ||
+                        error.message ||
+                        "Unknown error"
+                    )}
+
+                </small>
+
+            </div>
+
+        `;
+
+    }
+
 }
 
 
@@ -784,7 +1990,8 @@ function openAddProduct() {
     document
         .getElementById(
             "productImagePreview"
-        ).innerHTML = "";
+        )
+        .innerHTML = "";
 
 
     bootstrap.Modal
@@ -836,18 +2043,12 @@ function openProductModal(product) {
             product.description || "";
 
 
-    // IMPORTANT:
-    // File inputs cannot be populated with an existing
-    // server filename for security reasons.
-
     document
         .getElementById(
             "productImage"
         )
         .value = "";
 
-
-    // Existing image preview
 
     const preview =
         document.getElementById(
@@ -1034,10 +2235,6 @@ async function saveProduct(event) {
     );
 
 
-    // =================================================
-    // IMAGE
-    // =================================================
-
     if (
         fileInput &&
         fileInput.files &&
@@ -1067,10 +2264,6 @@ async function saveProduct(event) {
             "Saving...";
 
 
-        // =================================================
-        // CREATE
-        // =================================================
-
         if (!id) {
 
             await API.post(
@@ -1078,14 +2271,7 @@ async function saveProduct(event) {
                 formData
             );
 
-        }
-
-
-        // =================================================
-        // UPDATE
-        // =================================================
-
-        else {
+        } else {
 
             await API.put(
                 `/admin/products/${id}`,
@@ -1311,10 +2497,100 @@ export function setupAdminProducts() {
         );
 
 
+    document
+        .getElementById(
+            "addProductionButton"
+        )
+        ?.addEventListener(
+            "click",
+            addProduction
+        );
+
+
+    document
+        .getElementById(
+            "adjustInventoryButton"
+        )
+        ?.addEventListener(
+            "click",
+            adjustStock
+        );
+
+
+    document
+        .getElementById(
+            "refreshInventoryHistoryButton"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                const productId =
+                    document
+                        .getElementById(
+                            "inventoryModal"
+                        )
+                        ?.dataset
+                        ?.productId;
+
+
+                if (productId) {
+
+                    await loadInventoryHistory(
+                        productId
+                    );
+
+                }
+
+            }
+        );
+
+
     setupImagePreview();
 
 
     loadAdminProducts();
+
+}
+
+
+// =====================================================
+// FORMAT DATE
+// =====================================================
+// IMPORTANT:
+// We are deliberately NOT changing the timestamp logic.
+// Your current timestamp is now displaying correctly.
+// The browser will format the backend timestamp in the
+// user's local timezone.
+// =====================================================
+
+function formatDate(value) {
+
+    if (!value) {
+
+        return "—";
+
+    }
+
+
+    const date =
+        new Date(value);
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return escapeHtml(
+            value
+        );
+
+    }
+
+
+    return date.toLocaleString();
 
 }
 

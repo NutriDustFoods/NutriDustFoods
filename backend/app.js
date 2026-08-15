@@ -9,8 +9,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import adminOrderRoutes from "./routes/adminOrderRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import adminProductRoutes from "./routes/adminProductRoutes.js";
-
-
+import adminInventoryRoutes from "./routes/adminInventoryRoutes.js";
 // =====================================================
 // ES MODULE PATH SETUP
 // =====================================================
@@ -105,6 +104,16 @@ app.use(
 app.use(
     "/api/admin/products",
     adminProductRoutes
+);
+
+
+// =====================================================
+// ADMIN INVENTORY ROUTES
+// =====================================================
+
+app.use(
+    "/api/admin/inventory",
+    adminInventoryRoutes
 );
 
 

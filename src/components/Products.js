@@ -23,7 +23,6 @@ function getProductImageUrl(image) {
     }
 
 
-    // If the backend ever returns a complete URL
     if (
         image.startsWith("http://") ||
         image.startsWith("https://")
@@ -34,10 +33,120 @@ function getProductImageUrl(image) {
     }
 
 
-    // Backend returns paths such as:
-    // /uploads/products/example.png
-
     return `${API_BASE_URL}${image}`;
+
+}
+
+
+// =====================================================
+// STOCK DISPLAY
+// =====================================================
+
+function getStockDisplay(product) {
+
+    const quantity =
+        Number(
+            product.quantityAvailable ?? 0
+        );
+
+
+    // -------------------------------------------------
+    // OUT OF STOCK
+    // -------------------------------------------------
+
+    if (quantity <= 0) {
+
+        return `
+
+            <div
+                class="alert alert-danger py-2 px-3 mb-3"
+            >
+
+                <i class="bi bi-x-circle-fill me-1"></i>
+
+                <strong>
+                    Out of Stock
+                </strong>
+
+            </div>
+
+        `;
+
+    }
+
+
+    // -------------------------------------------------
+    // VERY LOW STOCK
+    // -------------------------------------------------
+
+    if (quantity <= 5) {
+
+        return `
+
+            <div
+                class="alert alert-danger py-2 px-3 mb-3"
+            >
+
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+
+                <strong>
+                    Only ${quantity.toLocaleString()} left!
+                </strong>
+
+            </div>
+
+        `;
+
+    }
+
+
+    // -------------------------------------------------
+    // LOW STOCK
+    // -------------------------------------------------
+
+    if (
+        quantity <=
+        Number(
+            product.lowStockThreshold ?? 10
+        )
+    ) {
+
+        return `
+
+            <div
+                class="alert alert-warning py-2 px-3 mb-3"
+            >
+
+                <i class="bi bi-exclamation-circle-fill me-1"></i>
+
+                <strong>
+                    Only ${quantity.toLocaleString()} left
+                </strong>
+
+            </div>
+
+        `;
+
+    }
+
+
+    // -------------------------------------------------
+    // NORMAL STOCK
+    // -------------------------------------------------
+
+    return `
+
+        <div
+            class="text-success fw-semibold mb-3"
+        >
+
+            <i class="bi bi-check-circle-fill me-1"></i>
+
+            ${quantity.toLocaleString()} available
+
+        </div>
+
+    `;
 
 }
 
@@ -67,11 +176,25 @@ export async function Products() {
                 );
 
 
+            const quantity =
+                Number(
+                    product.quantityAvailable ?? 0
+                );
+
+
+            const isOutOfStock =
+                quantity <= 0;
+
+
             return `
 
                 <div class="col-lg-4 col-md-6">
 
                     <div class="card product-card h-100">
+
+                        <!-- ================================================= -->
+                        <!-- IMAGE -->
+                        <!-- ================================================= -->
 
                         <div class="position-relative">
 
@@ -114,6 +237,8 @@ export async function Products() {
                             }
 
 
+                            <!-- PRODUCT BADGE -->
+
                             <span
                                 class="badge bg-warning text-dark position-absolute top-0 start-0 m-3"
                             >
@@ -122,8 +247,37 @@ export async function Products() {
 
                             </span>
 
+
+                            <!-- OUT OF STOCK OVERLAY -->
+
+                            ${
+                                isOutOfStock
+                                    ? `
+
+                                        <div
+                                            class="position-absolute top-50 start-50 translate-middle w-100 text-center"
+                                        >
+
+                                            <span
+                                                class="badge bg-danger fs-6 px-3 py-2"
+                                            >
+
+                                                OUT OF STOCK
+
+                                            </span>
+
+                                        </div>
+
+                                    `
+                                    : ""
+                            }
+
                         </div>
 
+
+                        <!-- ================================================= -->
+                        <!-- BODY -->
+                        <!-- ================================================= -->
 
                         <div class="card-body">
 
@@ -181,7 +335,16 @@ export async function Products() {
                             </h3>
 
 
+                            <!-- ================================================= -->
+                            <!-- STOCK -->
+                            <!-- ================================================= -->
+
+                            ${getStockDisplay(product)}
+
+
+                            <!-- ================================================= -->
                             <!-- BUTTONS -->
+                            <!-- ================================================= -->
 
                             <div
                                 class="d-grid gap-2"
@@ -200,13 +363,22 @@ export async function Products() {
                                 <button
                                     class="btn btn-success add-to-cart"
                                     data-id="${product.id}"
+                                    ${
+                                        isOutOfStock
+                                            ? "disabled"
+                                            : ""
+                                    }
                                 >
 
                                     <i
                                         class="bi bi-cart-plus"
                                     ></i>
 
-                                    Add to Cart
+                                    ${
+                                        isOutOfStock
+                                            ? "Out of Stock"
+                                            : "Add to Cart"
+                                    }
 
                                 </button>
 

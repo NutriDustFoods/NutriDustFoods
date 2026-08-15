@@ -34,6 +34,98 @@ import {
 
 
 // =====================================================
+// PAYMENT AMOUNT HELPER
+// =====================================================
+// Safely get the order amount regardless of whether
+// the backend returns total, totalAmount, total_amount,
+// amount, or paidAmount.
+// =====================================================
+
+function getOrderAmount(order) {
+
+    if (!order) {
+
+        return 0;
+
+    }
+
+
+    const possibleAmounts = [
+
+        order.total,
+
+        order.totalAmount,
+
+        order.total_amount,
+
+        order.amount,
+
+        order.paidAmount,
+
+        order.paid_amount,
+
+        order.grandTotal,
+
+        order.grand_total
+
+    ];
+
+
+    for (const value of possibleAmounts) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== "" &&
+            Number.isFinite(
+                Number(value)
+            )
+        ) {
+
+            return Number(value);
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
+
+// =====================================================
+// FORMAT CURRENCY
+// =====================================================
+
+function formatNaira(amount) {
+
+    const numericAmount =
+        Number(amount);
+
+
+    if (
+        !Number.isFinite(
+            numericAmount
+        )
+    ) {
+
+        return "₦0";
+
+    }
+
+
+    return (
+        "₦" +
+        numericAmount.toLocaleString(
+            "en-NG"
+        )
+    );
+
+}
+
+
+// =====================================================
 // HANDLE PAYSTACK PAYMENT CALLBACK
 // =====================================================
 
@@ -44,12 +136,16 @@ async function handlePaymentCallback() {
             window.location.search
         );
 
+
     const reference =
         params.get("reference") ||
         params.get("trxref");
 
 
-    // No Paystack reference
+    // =================================================
+    // NO PAYSTACK REFERENCE
+    // =================================================
+
     if (!reference) {
 
         return false;
@@ -70,7 +166,9 @@ async function handlePaymentCallback() {
         // =================================================
 
         const result =
-            await verifyPayment(reference);
+            await verifyPayment(
+                reference
+            );
 
 
         console.log(
@@ -78,6 +176,10 @@ async function handlePaymentCallback() {
             result
         );
 
+
+        // =================================================
+        // VALIDATE RESPONSE
+        // =================================================
 
         if (
             !result ||
@@ -94,6 +196,32 @@ async function handlePaymentCallback() {
 
 
         // =================================================
+        // DEBUG ORDER DATA
+        // =================================================
+
+        console.log(
+            "📦 Verified order:",
+            result.order
+        );
+
+
+        // =================================================
+        // GET VERIFIED ORDER AMOUNT
+        // =================================================
+
+        const totalPaid =
+            getOrderAmount(
+                result.order
+            );
+
+
+        console.log(
+            "💰 Total paid:",
+            totalPaid
+        );
+
+
+        // =================================================
         // CLEAR CART
         // =================================================
 
@@ -103,7 +231,7 @@ async function handlePaymentCallback() {
 
 
         // =================================================
-        // REMOVE PAYSTACK PARAMETERS FROM URL
+        // REMOVE PAYSTACK PARAMETERS
         // =================================================
 
         window.history.replaceState(
@@ -143,19 +271,16 @@ async function handlePaymentCallback() {
         }
 
 
+        // =================================================
+        // ORDER NUMBER
+        // =================================================
+
         const orderIdElement =
             document.getElementById(
                 "successOrderId"
             );
 
 
-        const amountElement =
-            document.getElementById(
-                "successOrderAmount"
-            );
-
-
-        // Display order number
         if (orderIdElement) {
 
             orderIdElement.textContent =
@@ -164,18 +289,30 @@ async function handlePaymentCallback() {
         }
 
 
-        // Display total paid
+        // =================================================
+        // TOTAL PAID
+        // =================================================
+
+        const amountElement =
+            document.getElementById(
+                "successOrderAmount"
+            );
+
+
         if (amountElement) {
 
             amountElement.textContent =
-                `₦${Number(
-                    result.order.total_amount
-                ).toLocaleString()}`;
+                formatNaira(
+                    totalPaid
+                );
 
         }
 
 
-        // Open Bootstrap modal
+        // =================================================
+        // OPEN BOOTSTRAP SUCCESS MODAL
+        // =================================================
+
         const successModal =
             bootstrap.Modal
                 .getOrCreateInstance(
@@ -197,7 +334,10 @@ async function handlePaymentCallback() {
         );
 
 
-        // Remove Paystack parameters
+        // =================================================
+        // REMOVE PAYSTACK PARAMETERS
+        // =================================================
+
         window.history.replaceState(
             {},
             document.title,
@@ -207,7 +347,10 @@ async function handlePaymentCallback() {
 
         alert(
             "We could not verify your payment.\n\n" +
-            error.message
+            (
+                error?.message ||
+                "Unknown payment verification error."
+            )
         );
 
 
@@ -238,7 +381,9 @@ async function init() {
         // RENDER APPLICATION
         // =================================================
 
-        document.querySelector("#app").innerHTML = `
+        document.querySelector(
+            "#app"
+        ).innerHTML = `
 
             ${Navbar()}
 
@@ -279,18 +424,23 @@ async function init() {
         await handlePaymentCallback();
 
 
-        // =====================================================
+        // =================================================
         // CART
-        // =====================================================
+        // =================================================
 
         const cart =
-            bootstrap.Offcanvas.getOrCreateInstance(
-                document.getElementById("cart")
-            );
+            bootstrap.Offcanvas
+                .getOrCreateInstance(
+                    document.getElementById(
+                        "cart"
+                    )
+                );
 
 
         document
-            .getElementById("cartButton")
+            .getElementById(
+                "cartButton"
+            )
             .addEventListener(
                 "click",
                 () => {
@@ -340,12 +490,14 @@ async function init() {
             );
 
 
-        // =====================================================
+        // =================================================
         // VIEW PRODUCT
-        // =====================================================
+        // =================================================
 
         document
-            .querySelectorAll(".view-product")
+            .querySelectorAll(
+                ".view-product"
+            )
             .forEach(
                 button => {
 
@@ -375,7 +527,9 @@ async function init() {
                             }
 
 
-                            showProduct(product);
+                            showProduct(
+                                product
+                            );
 
                         }
                     );
@@ -384,12 +538,14 @@ async function init() {
             );
 
 
-        // =====================================================
+        // =================================================
         // ADD TO CART
-        // =====================================================
+        // =================================================
 
         document
-            .querySelectorAll(".add-to-cart")
+            .querySelectorAll(
+                ".add-to-cart"
+            )
             .forEach(
                 button => {
 
@@ -419,7 +575,10 @@ async function init() {
                             }
 
 
-                            addToCart(product);
+                            addToCart(
+                                product
+                            );
+
 
                             renderCart();
 
@@ -430,9 +589,9 @@ async function init() {
             );
 
 
-        // =====================================================
+        // =================================================
         // PROCEED TO CHECKOUT
-        // =====================================================
+        // =================================================
 
         document
             .getElementById(
@@ -486,9 +645,9 @@ async function init() {
             );
 
 
-        // =====================================================
+        // =================================================
         // CHECKOUT FORM
-        // =====================================================
+        // =================================================
 
         document
             .getElementById(
@@ -605,19 +764,61 @@ async function init() {
                                 item
                             ) => {
 
-                                return (
-                                    sum +
+                                const price =
                                     Number(
                                         item.price
-                                    ) *
+                                    );
+
+
+                                const quantity =
                                     Number(
                                         item.quantity
+                                    );
+
+
+                                if (
+                                    !Number.isFinite(
+                                        price
+                                    ) ||
+                                    !Number.isFinite(
+                                        quantity
                                     )
+                                ) {
+
+                                    return sum;
+
+                                }
+
+
+                                return (
+                                    sum +
+                                    price *
+                                    quantity
                                 );
 
                             },
                             0
                         );
+
+
+                    // =================================================
+                    // VALIDATE TOTAL
+                    // =================================================
+
+                    if (
+                        !Number.isFinite(
+                            total
+                        ) ||
+                        total <= 0
+                    ) {
+
+                        alert(
+                            "Unable to calculate the order total."
+                        );
+
+                        return;
+
+                    }
 
 
                     // =================================================
@@ -641,6 +842,12 @@ async function init() {
                     };
 
 
+                    console.log(
+                        "📦 Sending order:",
+                        orderData
+                    );
+
+
                     try {
 
                         // =================================================
@@ -653,12 +860,6 @@ async function init() {
 
                         submitButton.textContent =
                             "Creating Order...";
-
-
-                        console.log(
-                            "📦 Sending order:",
-                            orderData
-                        );
 
 
                         // =================================================
@@ -704,7 +905,7 @@ async function init() {
 
 
                         console.log(
-                            "💳 Initializing payment for Order:",
+                            "💳 Payment initialization for Order:",
                             orderId
                         );
 
@@ -741,7 +942,9 @@ async function init() {
 
                         localStorage.setItem(
                             "nutridust-pending-order",
-                            String(orderId)
+                            String(
+                                orderId
+                            )
                         );
 
 
@@ -753,7 +956,6 @@ async function init() {
                             paymentResponse
                                 .authorizationUrl;
 
-
                     } catch (error) {
 
                         console.error(
@@ -764,7 +966,10 @@ async function init() {
 
                         alert(
                             "Unable to continue to payment.\n\n" +
-                            error.message
+                            (
+                                error?.message ||
+                                "Unknown error."
+                            )
                         );
 
 
@@ -781,9 +986,9 @@ async function init() {
             );
 
 
-        // =====================================================
+        // =================================================
         // VIEW ORDER BUTTON
-        // =====================================================
+        // =================================================
 
         document
             .getElementById(
@@ -837,7 +1042,9 @@ async function init() {
 
 
         const app =
-            document.querySelector("#app");
+            document.querySelector(
+                "#app"
+            );
 
 
         if (app) {
@@ -853,7 +1060,9 @@ async function init() {
                         </h4>
 
                         <p class="mb-0">
+
                             ${error.message}
+
                         </p>
 
                     </div>

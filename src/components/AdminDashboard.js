@@ -5,6 +5,10 @@ import {
     logoutAdmin
 } from "./AdminLogin.js";
 
+import {
+    formatDateTime
+} from "../utils/dateTime.js";
+
 
 // =====================================================
 // API
@@ -793,13 +797,13 @@ function renderOrders(
 
                     <td>
 
-                        <small>
-                            ${formatDate(
-                                order.createdAt
-                            )}
-                        </small>
+    <small>
+        ${formatDateTime(
+            order.createdAt
+        )}
+    </small>
 
-                    </td>
+</td>
 
 
                     <td>
@@ -1764,42 +1768,6 @@ export function setupAdminLogout() {
     );
 
 }
-
-
-// =====================================================
-// FORMAT DATE
-// =====================================================
-
-function formatDate(
-    value
-) {
-
-    if (!value) {
-
-        return "—";
-
-    }
-
-
-    const date =
-        new Date(value);
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return value;
-
-    }
-
-
-    return date.toLocaleString();
-
-}
-
 
 // =====================================================
 // ESCAPE HTML
