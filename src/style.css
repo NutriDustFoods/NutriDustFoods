@@ -20,3 +20,52 @@ body{
 html{
     scroll-behavior:smooth;
 }
+
+/* =====================================================
+   NUTRIDUST CART - QUANTITY CONTROL FIX
+   ===================================================== */
+
+.nutridust-cart-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+.nutridust-cart-quantity-label {
+    white-space: nowrap;
+}
+
+.nutridust-cart-quantity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    gap: 0;
+}
+
+.nutridust-cart-quantity-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.nutridust-cart-quantity {
+    width: 64px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nutridust-cart-stock-total {
+    white-space: nowrap;
+}

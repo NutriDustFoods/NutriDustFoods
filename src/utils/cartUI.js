@@ -12,23 +12,16 @@ import {
 
 export function renderCart() {
 
-    const cart =
-        getCart();
+    const cart = getCart();
 
     const cartItems =
-        document.getElementById(
-            "cartItems"
-        );
+        document.getElementById("cartItems");
 
     const cartTotal =
-        document.getElementById(
-            "cartTotal"
-        );
+        document.getElementById("cartTotal");
 
     const cartCount =
-        document.getElementById(
-            "cartCount"
-        );
+        document.getElementById("cartCount");
 
 
     // =================================================
@@ -40,9 +33,7 @@ export function renderCart() {
         !cartTotal ||
         !cartCount
     ) {
-
         return;
-
     }
 
 
@@ -58,410 +49,433 @@ export function renderCart() {
     // EMPTY CART
     // =================================================
 
-    if (
-        cart.length === 0
-    ) {
+    if (cart.length === 0) {
 
         cartItems.innerHTML = `
 
-            <div class="text-center py-5">
+            <div class="nutridust-cart-empty">
 
-                <i
-                    class="bi bi-cart-x display-1 text-secondary"
-                ></i>
+                <div class="nutridust-cart-empty-icon">
 
-                <p class="text-secondary mt-3">
+                    <i class="bi bi-cart-x"></i>
 
-                    Your cart is empty.
+                </div>
 
+                <h5>
+                    Your cart is empty
+                </h5>
+
+                <p>
+                    Add some delicious NutriDust products
+                    to get started.
                 </p>
 
             </div>
 
         `;
 
-
-        cartTotal.textContent =
-            "₦0";
-
+        cartTotal.textContent = "₦0";
 
         return;
-
     }
 
 
     // =================================================
-    // CALCULATE TOTAL
+    // TOTAL
     // =================================================
 
     let total = 0;
-
 
     cartItems.innerHTML = "";
 
 
     // =================================================
-    // RENDER CART ITEMS
+    // RENDER PRODUCTS
     // =================================================
 
-    cart.forEach(
-        item => {
+    cart.forEach(item => {
 
-            // =========================================
-            // PRODUCT ID
-            // =========================================
+        // =============================================
+        // PRODUCT ID
+        // =============================================
 
-            const productId =
-                item._id ||
-                item.id;
-
-
-            // =========================================
-            // QUANTITY IN CART
-            // =========================================
-
-            const quantity =
-                Number(
-                    item.quantity || 0
-                );
+        const productId =
+            item._id ||
+            item.id;
 
 
-            // =========================================
-            // ORIGINAL AVAILABLE STOCK
-            //
-            // This is the stock currently returned
-            // by the backend.
-            //
-            // Example:
-            //
-            // Stock = 780
-            // Quantity = 2
-            //
-            // Remaining = 780 - 2 = 778
-            // =========================================
+        // =============================================
+        // QUANTITY
+        // =============================================
 
-            const availableStock =
-                Number(
-                    item.quantityAvailable ?? 0
-                );
+        const quantity =
+            Number(item.quantity || 0);
 
 
-            // =========================================
-            // REMAINING STOCK
-            //
-            // We DO NOT permanently change the database
-            // here.
-            //
-            // This is only the amount displayed to the
-            // customer while they are shopping.
-            // =========================================
+        // =============================================
+        // AVAILABLE STOCK
+        // =============================================
 
-            const remainingStock =
-                Math.max(
-                    0,
-                    availableStock - quantity
-                );
+        const availableStock =
+            Number(
+                item.quantityAvailable ?? 0
+            );
 
 
-            // =========================================
-            // PRICE
-            // =========================================
+        // =============================================
+        // REMAINING STOCK
+        // =============================================
 
-            const price =
-                Number(
-                    item.price || 0
-                );
-
-
-            // =========================================
-            // SUBTOTAL
-            // =========================================
-
-            const subtotal =
-                price *
-                quantity;
+        const remainingStock =
+            Math.max(
+                0,
+                availableStock - quantity
+            );
 
 
-            total +=
-                subtotal;
+        // =============================================
+        // PRICE
+        // =============================================
+
+        const price =
+            Number(item.price || 0);
 
 
-            // =========================================
-            // CHECK MAXIMUM QUANTITY
-            //
-            // Customer cannot select more than the
-            // original available stock.
-            // =========================================
+        // =============================================
+        // SUBTOTAL
+        // =============================================
 
-            const maximumReached =
-                quantity >=
-                availableStock;
+        const subtotal =
+            price * quantity;
 
 
-            // =========================================
-            // STOCK MESSAGE
-            // =========================================
-
-            let stockMessage = "";
+        total += subtotal;
 
 
-            // =========================================
-            // OUT OF STOCK
-            // =========================================
+        // =============================================
+        // MAXIMUM QUANTITY
+        // =============================================
 
-            if (
-                availableStock <= 0
-            ) {
-
-                stockMessage = `
-
-                    <div
-                        class="alert alert-danger py-2 px-3 mb-2"
-                    >
-
-                        <i
-                            class="bi bi-x-circle-fill me-1"
-                        ></i>
-
-                        <strong>
-                            Out of Stock
-                        </strong>
-
-                    </div>
-
-                `;
-
-            }
+        const maximumReached =
+            quantity >= availableStock;
 
 
-            // =========================================
-            // NO STOCK REMAINING FOR MORE UNITS
-            // =========================================
+        // =============================================
+        // PRODUCT IMAGE
+        // =============================================
 
-            else if (
-                remainingStock <= 0
-            ) {
-
-                stockMessage = `
-
-                    <div
-                        class="alert alert-warning py-2 px-3 mb-2"
-                    >
-
-                        <i
-                            class="bi bi-exclamation-triangle-fill me-1"
-                        ></i>
-
-                        <strong>
-                            No more stock available
-                        </strong>
-
-                        <div class="small mt-1">
-
-                            You have selected all
-                            ${availableStock.toLocaleString()}
-                            available unit(s).
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            }
+        let imageUrl =
+            item.image ||
+            item.imageUrl ||
+            item.productImage ||
+            "";
 
 
-            // =========================================
-            // REMAINING STOCK
-            // =========================================
+        // =============================================
+        // CONVERT BACKEND IMAGE PATH
+        // =============================================
 
-            else {
+        if (
+            imageUrl &&
+            !imageUrl.startsWith("http") &&
+            !imageUrl.startsWith("data:")
+        ) {
 
-                stockMessage = `
+            imageUrl =
+                `http://localhost:5000${imageUrl}`;
 
-                    <div
-                        class="text-success small mb-2"
-                    >
-
-                        <i
-                            class="bi bi-box-seam me-1"
-                        ></i>
-
-                        <strong>
-                            ${remainingStock.toLocaleString()}
-                        </strong>
-
-                        available
-
-                    </div>
-
-                `;
-
-            }
+        }
 
 
-            // =========================================
-            // CART ITEM
-            // =========================================
+        // =============================================
+        // IMAGE HTML
+        // =============================================
 
-            cartItems.innerHTML += `
+        const imageHtml =
+    imageUrl
 
-                <div
-                    class="card bg-secondary text-white mb-3"
+        ? `
+
+            <div
+                style="
+                    width:120px;
+                    height:120px;
+                    max-width:120px;
+                    max-height:120px;
+                    min-width:120px;
+                    min-height:120px;
+                    flex:0 0 70px;
+                    overflow:hidden;
+                    border-radius:8px;
+                    background:#222;
+                "
+            >
+
+                <img
+                    src="${escapeHtml(imageUrl)}"
+                    alt="${escapeHtml(item.name)}"
+                    style="
+                        width:120px;
+                        height:120px;
+                        max-width:120px;
+                        max-height:120px;
+                        min-width:120px;
+                        min-height:120px;
+                        object-fit:cover;
+                        display:block;
+                    "
+                    onerror="this.style.display='none';"
                 >
 
-                    <div class="card-body">
+            </div>
+
+        `
+
+        : `
+
+    <div
+        style="
+            width:70px;
+            height:70px;
+            min-width:70px;
+            max-width:70px;
+            min-height:70px;
+            max-height:70px;
+            flex:0 0 70px;
+            border-radius:8px;
+            background:#222;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:#777;
+        "
+    >
+
+        <i class="bi bi-box-seam"></i>
+
+    </div>
+
+`;
 
 
-                        <!-- ================================= -->
-                        <!-- PRODUCT INFORMATION -->
-                        <!-- ================================= -->
+        // =============================================
+        // STOCK STATUS
+        // =============================================
 
-                        <div
-                            class="d-flex justify-content-between align-items-start"
-                        >
-
-                            <div>
-
-                                <h5
-                                    class="text-warning mb-1"
-                                >
-
-                                    ${escapeHtml(
-                                        item.name
-                                    )}
-
-                                </h5>
+        let stockHtml = "";
 
 
-                                <p class="mb-1">
+        if (availableStock <= 0) {
 
-                                    ₦${price.toLocaleString()}
+            stockHtml = `
 
-                                    <small>
-                                        each
-                                    </small>
+                <div class="nutridust-stock-danger">
 
-                                </p>
+                    <i class="bi bi-x-circle-fill"></i>
 
-                            </div>
-
-
-                            <h5>
-
-                                ₦${subtotal.toLocaleString()}
-
-                            </h5>
-
-                        </div>
-
-
-                        <!-- ================================= -->
-                        <!-- STOCK INFORMATION -->
-                        <!-- ================================= -->
-
-                        ${stockMessage}
-
-
-                        <!-- ================================= -->
-                        <!-- QUANTITY CONTROLS -->
-                        <!-- ================================= -->
-
-                        <div
-                            class="d-flex align-items-center gap-2 mt-3"
-                        >
-
-
-                            <!-- ============================= -->
-                            <!-- DECREASE -->
-                            <!-- ============================= -->
-
-                            <button
-                                class="btn btn-danger decrease-btn"
-                                data-id="${escapeHtml(
-                                    productId
-                                )}"
-                                type="button"
-                                ${
-                                    quantity <= 1
-                                        ? "disabled"
-                                        : ""
-                                }
-                            >
-
-                                <i
-                                    class="bi bi-dash"
-                                ></i>
-
-                            </button>
-
-
-                            <!-- ============================= -->
-                            <!-- CURRENT QUANTITY -->
-                            <!-- ============================= -->
-
-                            <div
-                                class="px-3 py-2 bg-dark rounded text-center"
-                                style="min-width:90px;"
-                            >
-
-                                <strong>
-
-                                    ${quantity}
-
-                                </strong>
-
-
-                                <small
-                                    class="text-secondary d-block"
-                                >
-
-                                    of
-                                    ${availableStock.toLocaleString()}
-
-                                </small>
-
-                            </div>
-
-
-                            <!-- ============================= -->
-                            <!-- INCREASE -->
-                            <!-- ============================= -->
-
-                            <button
-                                class="btn btn-success increase-btn"
-                                data-id="${escapeHtml(
-                                    productId
-                                )}"
-                                type="button"
-
-                                ${
-                                    maximumReached ||
-                                    availableStock <= 0
-                                        ? "disabled"
-                                        : ""
-                                }
-
-                            >
-
-                                <i
-                                    class="bi bi-plus"
-                                ></i>
-
-                            </button>
-
-
-                        </div>
-
-
-                    </div>
+                    <span>
+                        Out of stock
+                    </span>
 
                 </div>
 
             `;
 
         }
-    );
+
+        else if (remainingStock <= 0) {
+
+            stockHtml = `
+
+                <div class="nutridust-stock-warning">
+
+                    <i class="bi bi-exclamation-circle-fill"></i>
+
+                    <span>
+                        Maximum available quantity selected
+                    </span>
+
+                </div>
+
+            `;
+
+        }
+
+        else {
+
+            stockHtml = `
+
+                <div class="nutridust-stock-success">
+
+                    <i class="bi bi-box-seam-fill"></i>
+
+                    <span>
+                        ${remainingStock.toLocaleString()}
+                        available
+                    </span>
+
+                </div>
+
+            `;
+
+        }
+
+
+        // =============================================
+        // CART ITEM
+        // =============================================
+
+        cartItems.innerHTML += `
+
+            <div class="nutridust-cart-item">
+
+
+                <!-- ================================= -->
+                <!-- PRODUCT INFORMATION -->
+                <!-- ================================= -->
+
+                <div class="nutridust-cart-product">
+
+
+                    <!-- ============================= -->
+                    <!-- PRODUCT IMAGE -->
+                    <!-- ============================= -->
+
+                    <div class="nutridust-cart-image-wrapper">
+
+                        ${imageHtml}
+
+                    </div>
+
+
+                    <!-- ============================= -->
+                    <!-- PRODUCT DETAILS -->
+                    <!-- ============================= -->
+
+                    <div class="nutridust-cart-product-info">
+
+                        <h5 class="nutridust-cart-product-name">
+
+                            ${escapeHtml(
+                                item.name
+                            )}
+
+                        </h5>
+
+
+                        <div class="nutridust-cart-unit-price">
+
+                            ₦${price.toLocaleString()}
+
+                            <span>
+                                each
+                            </span>
+
+                        </div>
+
+
+                        ${stockHtml}
+
+                    </div>
+
+
+                    <!-- ============================= -->
+                    <!-- SUBTOTAL -->
+                    <!-- ============================= -->
+
+                    <div class="nutridust-cart-subtotal">
+
+                        ₦${subtotal.toLocaleString()}
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- ================================= -->
+                <!-- QUANTITY CONTROLS -->
+                <!-- ================================= -->
+
+                <div class="nutridust-cart-controls-row">
+
+
+                    <span class="nutridust-cart-quantity-label">
+
+                        Quantity
+
+                    </span>
+
+
+                    <div class="nutridust-cart-quantity-controls">
+
+
+                        <!-- DECREASE -->
+
+                        <button
+                            class="nutridust-cart-quantity-btn decrease-btn"
+                            data-id="${escapeHtml(productId)}"
+                            type="button"
+                            ${
+                                quantity <= 1
+                                    ? "disabled"
+                                    : ""
+                            }
+                            aria-label="Decrease quantity"
+                        >
+
+                            <i class="bi bi-dash"></i>
+
+                        </button>
+
+
+                        <!-- QUANTITY -->
+
+                        <div class="nutridust-cart-quantity">
+
+                            ${quantity}
+
+                        </div>
+
+
+                        <!-- INCREASE -->
+
+                        <button
+                            class="nutridust-cart-quantity-btn increase-btn"
+                            data-id="${escapeHtml(productId)}"
+                            type="button"
+                            ${
+                                maximumReached ||
+                                availableStock <= 0
+                                    ? "disabled"
+                                    : ""
+                            }
+                            aria-label="Increase quantity"
+                        >
+
+                            <i class="bi bi-plus"></i>
+
+                        </button>
+
+
+                    </div>
+
+
+                    <span class="nutridust-cart-stock-total">
+
+                        ${availableStock.toLocaleString()}
+                        total stock
+
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        `;
+
+    });
 
 
     // =================================================
@@ -478,42 +492,38 @@ export function renderCart() {
     // =================================================
 
     document
-        .querySelectorAll(
-            ".increase-btn"
-        )
-        .forEach(
-            button => {
+        .querySelectorAll(".increase-btn")
+        .forEach(button => {
 
-                button.addEventListener(
-                    "click",
-                    () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                        const result =
-                            increaseQuantity(
-                                button.dataset.id
-                            );
+                    const result =
+                        increaseQuantity(
+                            button.dataset.id
+                        );
 
 
-                        if (
-                            result &&
-                            !result.success &&
+                    if (
+                        result &&
+                        !result.success &&
+                        result.message
+                    ) {
+
+                        alert(
                             result.message
-                        ) {
-
-                            alert(
-                                result.message
-                            );
-
-                        }
-
-
-                        renderCart();
+                        );
 
                     }
-                );
 
-            }
-        );
+
+                    renderCart();
+
+                }
+            );
+
+        });
 
 
     // =================================================
@@ -521,28 +531,23 @@ export function renderCart() {
     // =================================================
 
     document
-        .querySelectorAll(
-            ".decrease-btn"
-        )
-        .forEach(
-            button => {
+        .querySelectorAll(".decrease-btn")
+        .forEach(button => {
 
-                button.addEventListener(
-                    "click",
-                    () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                        decreaseQuantity(
-                            button.dataset.id
-                        );
+                    decreaseQuantity(
+                        button.dataset.id
+                    );
 
+                    renderCart();
 
-                        renderCart();
+                }
+            );
 
-                    }
-                );
-
-            }
-        );
+        });
 
 }
 
@@ -553,25 +558,28 @@ export function renderCart() {
 
 function escapeHtml(value) {
 
-    return String(
-        value ?? ""
-    )
+    return String(value ?? "")
+
         .replace(
             /&/g,
             "&amp;"
         )
+
         .replace(
             /</g,
             "&lt;"
         )
+
         .replace(
             />/g,
             "&gt;"
         )
+
         .replace(
             /"/g,
             "&quot;"
         )
+
         .replace(
             /'/g,
             "&#039;"

@@ -291,6 +291,10 @@ export const updateAdminOrderStatus = (req, res) => {
         ];
 
 
+        // =================================================
+        // VALIDATE STATUS
+        // =================================================
+
         if (!status) {
 
             return res.status(400).json({
@@ -319,9 +323,17 @@ export const updateAdminOrderStatus = (req, res) => {
         }
 
 
+        // =================================================
+        // GET EXISTING ORDER
+        // =================================================
+
         const existingOrder =
             db.prepare(`
-                SELECT id
+                SELECT
+                    id,
+                    items,
+                    payment_status,
+                    order_status
                 FROM orders
                 WHERE id = ?
             `).get(id);
@@ -341,19 +353,301 @@ export const updateAdminOrderStatus = (req, res) => {
         }
 
 
-        db.prepare(`
-            UPDATE orders
+        // =================================================
+        // DO NOT RESTORE STOCK TWICE
+        // =================================================
 
-            SET
-                order_status = ?,
-                updated_at = CURRENT_TIMESTAMP
+        if (
+            status === "cancelled" &&
+            existingOrder.order_status === "cancelled"
+        ) {
 
-            WHERE id = ?
-        `).run(
-            status,
-            id
-        );
+            return res.status(200).json({
 
+                success: true,
+
+                message:
+                    "Order is already cancelled."
+
+            });
+
+        }
+
+
+        // =================================================
+        // CANCEL ORDER + RESTORE INVENTORY
+        // =================================================
+
+        const transaction =
+            db.transaction(() => {
+
+                // =========================================
+                // CANCEL ORDER
+                // =========================================
+
+                if (status === "cancelled") {
+
+                    let items = [];
+
+                    try {
+
+                        items =
+                            typeof existingOrder.items === "string"
+                                ? JSON.parse(existingOrder.items)
+                                : existingOrder.items || [];
+
+                    } catch {
+
+                        items = [];
+
+                    }
+
+
+                    // =====================================
+                    // RESTORE EACH PRODUCT
+                    // =====================================
+
+                    for (const item of items) {
+
+                        const productId =
+                            Number(
+                                item.productId ||
+                                item.id ||
+                                item._id
+                            );
+
+
+                        const quantity =
+                            Number(
+                                item.quantity || 0
+                            );
+
+
+                        if (
+                            !Number.isInteger(productId) ||
+                            productId <= 0 ||
+                            !Number.isInteger(quantity) ||
+                            quantity <= 0
+                        ) {
+
+                            continue;
+
+                        }
+
+
+                        // =================================
+                        // CHECK IF THIS ORDER WAS ALREADY
+                        // RESTORED THROUGH A CANCELLATION
+                        // =================================
+
+                        const existingCancellation =
+                            db.prepare(`
+                                SELECT id
+                                FROM inventory_movements
+                                WHERE product_id = ?
+                                  AND reference_id = ?
+                                  AND movement_type = 'cancellation'
+                                LIMIT 1
+                            `).get(
+
+                                productId,
+
+                                id
+
+                            );
+
+
+                        if (existingCancellation) {
+
+                            continue;
+
+                        }
+
+
+                        // =================================
+                        // GET INVENTORY
+                        // =================================
+
+                        const inventory =
+                            db.prepare(`
+                                SELECT
+                                    product_id,
+                                    quantity_available,
+                                    reserved_quantity,
+                                    total_sold
+                                FROM inventory
+                                WHERE product_id = ?
+                            `).get(
+                                productId
+                            );
+
+
+                        if (!inventory) {
+
+                            throw new Error(
+                                `Inventory record not found for product #${productId}.`
+                            );
+
+                        }
+
+
+                        // =================================
+                        // PENDING / UNPAID ORDER
+                        // =================================
+                        //
+                        // Stock was reserved when the order
+                        // was created.
+                        //
+                        // Return it to available stock and
+                        // remove the reservation.
+                        //
+                        // =================================
+
+                        if (
+                            existingOrder.payment_status !== "paid"
+                        ) {
+
+                            db.prepare(`
+                                UPDATE inventory
+
+                                SET
+                                    quantity_available =
+                                        quantity_available + ?,
+
+                                    reserved_quantity =
+                                        MAX(
+                                            0,
+                                            reserved_quantity - ?
+                                        ),
+
+                                    updated_at =
+                                        CURRENT_TIMESTAMP
+
+                                WHERE product_id = ?
+                            `).run(
+
+                                quantity,
+
+                                quantity,
+
+                                productId
+
+                            );
+
+                        }
+
+
+                        // =================================
+                        // PAID ORDER
+                        // =================================
+                        //
+                        // Payment already completed, so the
+                        // reservation has already moved into
+                        // total_sold.
+                        //
+                        // Cancelling therefore returns the
+                        // product to available stock and
+                        // removes it from total_sold.
+                        //
+                        // =================================
+
+                        else {
+
+                            db.prepare(`
+                                UPDATE inventory
+
+                                SET
+                                    quantity_available =
+                                        quantity_available + ?,
+
+                                    total_sold =
+                                        MAX(
+                                            0,
+                                            total_sold - ?
+                                        ),
+
+                                    updated_at =
+                                        CURRENT_TIMESTAMP
+
+                                WHERE product_id = ?
+                            `).run(
+
+                                quantity,
+
+                                quantity,
+
+                                productId
+
+                            );
+
+                        }
+
+
+                        // =================================
+                        // RECORD INVENTORY MOVEMENT
+                        // =================================
+
+                        db.prepare(`
+                            INSERT INTO inventory_movements (
+                                product_id,
+                                movement_type,
+                                quantity,
+                                reference_id,
+                                note
+                            )
+                            VALUES (?, ?, ?, ?, ?)
+                        `).run(
+
+                            productId,
+
+                            "cancellation",
+
+                            quantity,
+
+                            id,
+
+                            `Restored ${quantity} unit(s) because order #${id} was cancelled`
+
+                        );
+
+                    }
+
+                }
+
+
+                // =========================================
+                // UPDATE ORDER STATUS
+                // =========================================
+
+                db.prepare(`
+                    UPDATE orders
+
+                    SET
+                        order_status = ?,
+                        updated_at = CURRENT_TIMESTAMP
+
+                    WHERE id = ?
+                `).run(
+
+                    status,
+
+                    id
+
+                );
+
+            });
+
+
+        // =================================================
+        // EXECUTE TRANSACTION
+        // =================================================
+
+        transaction();
+
+
+        // =================================================
+        // GET UPDATED ORDER
+        // =================================================
 
         const updatedOrder =
             db.prepare(`
@@ -391,12 +685,18 @@ export const updateAdminOrderStatus = (req, res) => {
         }
 
 
+        // =================================================
+        // SUCCESS
+        // =================================================
+
         res.status(200).json({
 
             success: true,
 
             message:
-                "Order status updated successfully.",
+                status === "cancelled"
+                    ? "Order cancelled and inventory restored successfully."
+                    : "Order status updated successfully.",
 
             order: {
 
@@ -418,7 +718,9 @@ export const updateAdminOrderStatus = (req, res) => {
                 items,
 
                 total:
-                    Number(updatedOrder.total_amount),
+                    Number(
+                        updatedOrder.total_amount
+                    ),
 
                 paymentStatus:
                     updatedOrder.payment_status,
@@ -453,7 +755,10 @@ export const updateAdminOrderStatus = (req, res) => {
             success: false,
 
             message:
-                "Unable to update order status."
+                "Unable to update order status.",
+
+            error:
+                error.message
 
         });
 
