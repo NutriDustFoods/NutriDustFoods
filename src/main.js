@@ -17,7 +17,7 @@ import {
 import { Hero } from "./components/Hero.js";
 import { WhyChoose } from "./components/WhyChoose.js";
 import { Products, refreshCustomerProductsSilently } from "./components/Products.js";
-import { Stats } from "./components/Stats.js";
+import { Stats } from "./components/stats.js";
 import { ProductModal } from "./components/ProductModal.js";
 import { SearchBar } from "./components/SearchBar.js";
 import { CategoryFilter } from "./components/CategoryFilter.js";
