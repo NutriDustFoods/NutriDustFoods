@@ -22,7 +22,17 @@ export const getDeliverySettings = () => ({
 export const calculateDeliveryQuote = async destinationAddress => {
     const settings = getDeliverySettings();
     if (!settings.shopAddress || !settings.googleMapsApiKey || !(settings.pricePerKm > 0)) {
-        if (process.env.NODE_ENV !== "production") return { distanceMeters:null, distanceKm:null, fee:Number(process.env.DELIVERY_FEE || 1500), pricePerKm:null, duration:null, estimated:true };
+        const fixedDeliveryFee = numberSetting("DELIVERY_FEE");
+        if (fixedDeliveryFee > 0 || process.env.NODE_ENV !== "production") {
+            return {
+                distanceMeters: null,
+                distanceKm: null,
+                fee: fixedDeliveryFee > 0 ? fixedDeliveryFee : 1500,
+                pricePerKm: null,
+                duration: null,
+                estimated: true
+            };
+        }
         throw Object.assign(new Error("Distance-based delivery pricing is not configured yet."), { status:503, code:"DELIVERY_PRICING_NOT_CONFIGURED" });
     }
     const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
