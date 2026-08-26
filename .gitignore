@@ -25,6 +25,18 @@ dist-ssr
 *.sqlite
 *.sqlite3
 backend/uploads/
+!backend/uploads/
+backend/uploads/*
+!backend/uploads/products/
+backend/uploads/products/*
+!backend/uploads/products/1786631438384-670544851.png
+!backend/uploads/products/1786631451444-550336956.png
+!backend/uploads/products/1786631478071-527362541.png
+!backend/uploads/products/1786614585801-2bb911b1-029b-4f0d-b0db-587d635db2f3.png
+!backend/uploads/products/1786616334770-669588199.png
+!backend/uploads/products/1786613123404-1b8e0107-52c3-417d-98b0-f8346ad7ac38.png
+!backend/uploads/products/1786616623848-463194522.png
+!backend/uploads/products/1786638610454-116315337.png
 
 # Generated file inventories
 src-files.txt
