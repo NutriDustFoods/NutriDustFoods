@@ -80,12 +80,25 @@ export const streamLocalRiderDocument = async (req, res) => {
     return access?.filePath ? res.sendFile(access.filePath) : res.redirect(access?.signedUrl || "/");
 };
 
-export const recordRiderInspection = (req, res) => {
+export const recordRiderInspection = async (req, res) => {
     const status = String(req.body?.inspectionStatus || "").trim().toLowerCase();
     const notes = String(req.body?.inspectionNotes || "").trim().slice(0, 1000);
     if (!["passed","failed"].includes(status)) return res.status(400).json({ success:false, message:"Inspection must be passed or failed." });
-    const result = db.prepare("UPDATE rider_applications SET inspection_status=?,inspection_notes=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND application_status IN ('pending_review','rejected')").run(status, notes || null, req.admin.username || "admin", Number(req.params.id));
-    return result.changes ? res.json({ success:true, message:"Physical inspection recorded." }) : res.status(404).json({ success:false, message:"Reviewable application not found." });
+    const application = db.prepare("SELECT * FROM rider_applications WHERE id=? AND rider_id IS NULL").get(Number(req.params.id));
+    if (!application) return res.status(404).json({ success:false, message:"Reviewable application not found." });
+    db.prepare("UPDATE rider_applications SET inspection_status=?,inspection_notes=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?").run(status, notes || null, req.admin.username || "admin", application.id);
+    let emailSent = false;
+    try {
+        if (!application.email_verified_at) {
+            const verifyToken = token();
+            db.prepare("UPDATE rider_applications SET email_verification_token_hash=?,email_verification_expires_at=datetime('now','+24 hours') WHERE id=?").run(hashToken(verifyToken), application.id);
+            const verificationUrl = `${getRiderAppUrl()}?verify=${verifyToken}`;
+            emailSent = await sendEmail({ to:application.email, subject:"Verify your NutriDust rider application", text:`Your bike inspection was recorded. Verify your email: ${verificationUrl}`, html:`<p>Hello ${application.first_name},</p><p>Your bike inspection was recorded as <strong>${status}</strong>.</p><p><a href="${verificationUrl}">Verify your email to continue onboarding</a>.</p><p>This link expires in 24 hours.</p>` });
+        } else {
+            emailSent = await sendEmail({ to:application.email, subject:"NutriDust rider inspection update", text:`Your bike inspection result is: ${status}. ${notes}`, html:`<p>Hello ${application.first_name},</p><p>Your bike inspection result is <strong>${status}</strong>.</p>${notes?`<p>Notes: ${notes}</p>`:""}<p>${status==="passed"?"Your application can now proceed to final approval.":"NutriDust will contact you about the next step."}</p>` });
+        }
+    } catch (error) { console.error("Rider inspection email failed:", error.message); }
+    return res.json({ success:true, emailSent, message:emailSent ? "Physical inspection recorded and the rider was emailed." : "Physical inspection recorded, but email could not be sent. Check EMAIL_USER and EMAIL_PASS on Render." });
 };
 
 const uniqueUsername = (firstName, surname) => {
@@ -123,4 +136,3 @@ export const rejectRiderApplication = (req, res) => {
     const result = db.prepare("UPDATE rider_applications SET application_status='rejected',inspection_notes=COALESCE(?,inspection_notes),reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND rider_id IS NULL").run(notes || null,req.admin.username || "admin",Number(req.params.id));
     return result.changes ? res.json({ success:true, message:"Application rejected." }) : res.status(404).json({ success:false, message:"Application not found." });
 };
-
