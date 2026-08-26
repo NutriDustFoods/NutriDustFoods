@@ -1,125 +1,8 @@
 import Product from "../models/Product.js";
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-
-
-// =====================================================
-// FILE PATH CONFIGURATION
-// =====================================================
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
-// =====================================================
-// DELETE LOCAL PRODUCT IMAGE
-// =====================================================
-
-async function deleteProductImage(imagePath) {
-
-    try {
-
-        // Nothing to delete
-        if (!imagePath) {
-            return;
-        }
-
-
-        // Only delete images managed by our uploads folder
-        if (
-            !imagePath.startsWith(
-                "/uploads/products/"
-            )
-        ) {
-
-            return;
-
-        }
-
-
-        // Remove the leading slash
-        const relativePath =
-            imagePath.replace(
-                /^\/+/,
-                ""
-            );
-
-
-        // Build the actual backend file path
-        const filePath =
-            path.resolve(
-                __dirname,
-                "..",
-                relativePath
-            );
-
-
-        // Safety check:
-        // Make sure the resolved file is actually
-        // inside backend/uploads/products
-        const uploadsDirectory =
-            path.resolve(
-                __dirname,
-                "..",
-                "uploads",
-                "products"
-            );
-
-
-        if (
-            !filePath.startsWith(
-                uploadsDirectory +
-                path.sep
-            )
-        ) {
-
-            console.warn(
-                "⚠️ Blocked unsafe image deletion:",
-                imagePath
-            );
-
-            return;
-
-        }
-
-
-        await fs.unlink(
-            filePath
-        );
-
-
-        console.log(
-            "🗑️ Product image deleted:",
-            filePath
-        );
-
-
-    } catch (error) {
-
-        // If the file is already gone, that's okay.
-        if (
-            error.code ===
-            "ENOENT"
-        ) {
-
-            console.log(
-                "ℹ️ Product image was already missing."
-            );
-
-            return;
-
-        }
-
-
-        console.error(
-            "⚠️ Unable to delete product image:",
-            error
-        );
-
-    }
-
-}
+import {
+    deleteProductImage,
+    uploadProductImage
+} from "../services/productImageStorageService.js";
 
 
 // =====================================================
@@ -215,10 +98,7 @@ export const createAdminProduct = async (
         // GET UPLOADED IMAGE
         // -------------------------------------------------
 
-        const image =
-            req.file
-                ? `/uploads/products/${req.file.filename}`
-                : "";
+        const image = await uploadProductImage(req.file);
 
 
         // -------------------------------------------------
@@ -352,8 +232,7 @@ export const updateAdminProduct = async (
                 existing.image || "";
 
 
-            image =
-                `/uploads/products/${req.file.filename}`;
+            image = await uploadProductImage(req.file);
 
         }
 
@@ -410,10 +289,11 @@ export const updateAdminProduct = async (
             oldImage &&
             oldImage !== image
         ) {
-
-            await deleteProductImage(
-                oldImage
-            );
+            try {
+                await deleteProductImage(oldImage);
+            } catch (error) {
+                console.warn("⚠️ Unable to remove the previous product image:", error.message);
+            }
 
         }
 
@@ -509,10 +389,11 @@ export const deleteAdminProduct = async (
         // -------------------------------------------------
 
         if (image) {
-
-            await deleteProductImage(
-                image
-            );
+            try {
+                await deleteProductImage(image);
+            } catch (error) {
+                console.warn("⚠️ Unable to remove the deleted product image:", error.message);
+            }
 
         }
 

@@ -2,18 +2,32 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-import app from "./app.js";
-import "./config/sqlite.js";
+if (process.env.RENDER && !process.env.SQLITE_PATH) {
+    process.env.SQLITE_PATH = "/tmp/nutridust.db";
+}
 
-import {
-    startPaymentCleanupWorker
-} from "./services/paymentCleanupService.js";
-import { startOperationsAutomationWorker } from "./services/operationsAutomationService.js";
+const {
+    restoreDatabase,
+    scheduleDatabaseBackup,
+    flushDatabaseBackup
+} = await import("./services/databasePersistenceService.js");
+
+await restoreDatabase();
+
+const [
+    { default: app },
+    { startPaymentCleanupWorker },
+    { startOperationsAutomationWorker }
+] = await Promise.all([
+    import("./app.js"),
+    import("./services/paymentCleanupService.js"),
+    import("./services/operationsAutomationService.js")
+]);
 const PORT =
     process.env.PORT || 5000;
 
 
-app.listen(
+const server = app.listen(
     PORT,
     () => {
 
@@ -28,6 +42,20 @@ app.listen(
 
         startPaymentCleanupWorker();
         startOperationsAutomationWorker();
+        scheduleDatabaseBackup();
 
     }
 );
+
+const shutdown = signal => {
+    console.log(`Received ${signal}; saving database snapshot...`);
+    server.close(async () => {
+        await flushDatabaseBackup();
+        process.exit(0);
+    });
+
+    setTimeout(() => process.exit(1), 10000).unref();
+};
+
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => shutdown("SIGINT"));

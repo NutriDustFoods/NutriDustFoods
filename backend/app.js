@@ -14,6 +14,7 @@ import authRoutes from "./routes/authRoutes.js";
 import riderRoutes from "./routes/riderRoutes.js";
 import adminRiderRoutes from "./routes/adminRiderRoutes.js";
 import adminStaffRoutes from "./routes/adminStaffRoutes.js";
+import { scheduleDatabaseBackup } from "./services/databasePersistenceService.js";
 
 // =====================================================
 // ES MODULE PATH SETUP
@@ -56,6 +57,18 @@ app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+});
+
+app.use((req, res, next) => {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+        res.on("finish", () => {
+            if (res.statusCode >= 200 && res.statusCode < 400) {
+                scheduleDatabaseBackup();
+            }
+        });
+    }
+
     next();
 });
 

@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import { usesSupabaseProductStorage } from "../services/productImageStorageService.js";
 
 import {
     getAdminProducts,
@@ -19,7 +20,7 @@ const router = express.Router();
 // MULTER STORAGE
 // =====================================================
 
-const storage = multer.diskStorage({
+const localStorage = multer.diskStorage({
 
     destination: (req, file, cb) => {
 
@@ -55,6 +56,10 @@ const storage = multer.diskStorage({
     }
 
 });
+
+const storage = usesSupabaseProductStorage()
+    ? multer.memoryStorage()
+    : localStorage;
 
 
 // =====================================================
