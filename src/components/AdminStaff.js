@@ -75,6 +75,5 @@ export async function setupAdminStaff() {
         catch (error) { showMessage(error.response?.data?.message || "Unable to create account.", "danger"); }
     });
 
-    window.addEventListener("nutridust:admin-refresh", event => { if (event.detail?.view === "staff") load(); });
     await load();
 }

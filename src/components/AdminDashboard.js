@@ -515,9 +515,7 @@ export async function loadAdminOrders() {
         );
 
 
-        renderOrders(
-            orders
-        );
+        applyAdminOrderFilters();
 
 
         return orders;
@@ -1500,6 +1498,25 @@ async function updateOrderStatus(
 // FILTERS
 // =====================================================
 
+function applyAdminOrderFilters() {
+    const orders = window.nutriDustAdminOrders || [];
+    const searchValue = String(document.getElementById("orderSearch")?.value || "").toLowerCase().trim();
+    const paymentValue = String(document.getElementById("paymentFilter")?.value || "all").toLowerCase();
+    const statusValue = String(document.getElementById("statusFilter")?.value || "all").toLowerCase();
+
+    const filtered = orders.filter(order => {
+        const text = [order.id, `#${order.id}`, order.customerName, order.customerEmail, order.customerPhone]
+            .join(" ").toLowerCase();
+        const orderPayment = String(order.paymentStatus || "").toLowerCase();
+        const orderStatus = String(order.orderStatus || "").toLowerCase();
+        return (!searchValue || text.includes(searchValue)) &&
+            (paymentValue === "all" || orderPayment === paymentValue) &&
+            (statusValue === "all" || orderStatus === statusValue);
+    });
+
+    renderOrders(filtered);
+}
+
 export function setupAdminFilters() {
 
     const search =
@@ -1520,96 +1537,21 @@ export function setupAdminFilters() {
         );
 
 
-    const filter = () => {
-
-        const orders =
-            window.nutriDustAdminOrders ||
-            [];
-
-
-        const searchValue =
-            String(
-                search?.value || ""
-            )
-                .toLowerCase()
-                .trim();
-
-
-        const paymentValue =
-            payment?.value ||
-            "all";
-
-
-        const statusValue =
-            status?.value ||
-            "all";
-
-
-        const filtered =
-            orders.filter(
-                order => {
-
-                    const text =
-                        [
-                            order.id,
-                            order.customerName,
-                            order.customerEmail
-                        ]
-                            .join(" ")
-                            .toLowerCase();
-
-
-                    const matchesSearch =
-                        !searchValue ||
-                        text.includes(
-                            searchValue
-                        );
-
-
-                    const matchesPayment =
-                        paymentValue === "all" ||
-                        order.paymentStatus ===
-                        paymentValue;
-
-
-                    const matchesStatus =
-                        statusValue === "all" ||
-                        order.orderStatus ===
-                        statusValue;
-
-
-                    return (
-                        matchesSearch &&
-                        matchesPayment &&
-                        matchesStatus
-                    );
-
-                }
-            );
-
-
-        renderOrders(
-            filtered
-        );
-
-    };
-
-
     search?.addEventListener(
         "input",
-        filter
+        applyAdminOrderFilters
     );
 
 
     payment?.addEventListener(
         "change",
-        filter
+        applyAdminOrderFilters
     );
 
 
     status?.addEventListener(
         "change",
-        filter
+        applyAdminOrderFilters
     );
 
 }
