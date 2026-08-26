@@ -1,10 +1,19 @@
 import express from "express";
-import { riderLogin, getRiderMe, getRiderDashboard, getRiderDeliveries, updateDeliveryStatus, updateAvailability, updateLocation, getRiderEarnings, markNotificationsRead } from "../controllers/riderController.js";
+import multer from "multer";
+import { riderLogin, getRiderMe, getRiderDashboard, getRiderDeliveries, updateDeliveryStatus, updateAvailability, updateLocation, getRiderEarnings, markNotificationsRead, changeRiderPassword, requestRiderPasswordReset, resetRiderPassword } from "../controllers/riderController.js";
+import { submitRiderApplication, verifyRiderApplicationEmail, getRiderApplicationStatus } from "../controllers/riderApplicationController.js";
 import { riderAuth } from "../middleware/riderAuth.js";
 import { getCommerceDashboard, activateSubscription, applyReferral, requestWithdrawal, savePushSubscription } from "../controllers/riderCommerceController.js";
 
 const router = express.Router();
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:5*1024*1024,files:2},fileFilter:(_req,file,done)=>done(null,["application/pdf","image/jpeg","image/png","image/webp"].includes(file.mimetype))});
+router.post("/applications",upload.fields([{name:"ownershipDocument",maxCount:1},{name:"drivingLicense",maxCount:1}]),submitRiderApplication);
+router.post("/applications/verify",verifyRiderApplicationEmail);
+router.get("/applications/status/:trackingCode",getRiderApplicationStatus);
+router.post("/password/forgot",requestRiderPasswordReset);
+router.post("/password/reset",resetRiderPassword);
 router.post("/login", riderLogin);
+router.post("/password/change",riderAuth,changeRiderPassword);
 router.get("/me", riderAuth, getRiderMe);
 router.get("/dashboard", riderAuth, getRiderDashboard);
 router.get("/deliveries", riderAuth, getRiderDeliveries);

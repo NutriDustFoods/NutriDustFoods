@@ -758,12 +758,61 @@ ensureColumn("riders", "referred_by_rider_id", "INTEGER");
 ensureColumn("riders", "bank_name", "TEXT");
 ensureColumn("riders", "bank_account_name", "TEXT");
 ensureColumn("riders", "bank_account_number", "TEXT");
+ensureColumn("riders", "username", "TEXT");
+ensureColumn("riders", "first_name", "TEXT");
+ensureColumn("riders", "middle_name", "TEXT");
+ensureColumn("riders", "surname", "TEXT");
+ensureColumn("riders", "application_id", "INTEGER");
+ensureColumn("riders", "must_change_password", "INTEGER NOT NULL DEFAULT 0");
 ensureColumn("deliveries", "delivery_fee", "REAL NOT NULL DEFAULT 0");
 ensureColumn("deliveries", "proof_photo", "TEXT");
 ensureColumn("orders", "fulfillment_type", "TEXT NOT NULL DEFAULT 'delivery'");
 ensureColumn("orders", "delivery_fee", "REAL NOT NULL DEFAULT 0");
 ensureColumn("orders", "delivery_distance_meters", "INTEGER");
 ensureColumn("orders", "auto_dispatch_eligible", "INTEGER NOT NULL DEFAULT 0");
+
+db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_riders_username ON riders(username) WHERE username IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS rider_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tracking_code TEXT NOT NULL UNIQUE,
+        first_name TEXT NOT NULL,
+        middle_name TEXT,
+        surname TEXT NOT NULL,
+        phone TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        vehicle_type TEXT NOT NULL DEFAULT 'Motorcycle',
+        plate_number TEXT NOT NULL,
+        driving_license_path TEXT,
+        ownership_document_path TEXT NOT NULL,
+        email_verification_token_hash TEXT,
+        email_verification_expires_at DATETIME,
+        email_verified_at DATETIME,
+        application_status TEXT NOT NULL DEFAULT 'pending_email',
+        inspection_status TEXT NOT NULL DEFAULT 'pending',
+        inspection_notes TEXT,
+        reviewed_by TEXT,
+        reviewed_at DATETIME,
+        rider_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(rider_id) REFERENCES riders(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS rider_password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rider_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        used_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(rider_id) REFERENCES riders(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rider_applications_status ON rider_applications(application_status, inspection_status);
+    CREATE INDEX IF NOT EXISTS idx_rider_password_resets_rider ON rider_password_resets(rider_id, expires_at);
+`);
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS rider_earnings (
