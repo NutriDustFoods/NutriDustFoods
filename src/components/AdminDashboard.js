@@ -1365,6 +1365,9 @@ function commandLabel(status, pickup) {
 }
 
 function statusControl(order) {
+    if (!window.nutridustAdminCan?.("orders.update")) {
+        return `<span class="badge text-bg-secondary">View only</span>`;
+    }
     const statuses = nextAdminStatuses(order);
     if (!statuses.length) return `<span class="badge text-bg-secondary">No further admin action</span><p class="small text-secondary mb-0 mt-2">${order.fulfillmentType === "delivery" && !["delivered","cancelled"].includes(order.orderStatus)?"Delivery progress is controlled by the assigned rider.":"This order is complete and locked."}</p>`;
     return `<label for="adminOrderStatus" class="form-label small fw-semibold">Available action</label><select id="adminOrderStatus" class="form-select">${statuses.map(status=>`<option value="${status}">${commandLabel(status,order.fulfillmentType==="pickup")}</option>`).join("")}</select><button type="button" id="updateOrderStatusButton" data-order-id="${escapeHtml(order.id)}" class="btn btn-dark w-100 mt-3"><i class="bi bi-check2-circle me-2"></i>Apply Action</button>`;

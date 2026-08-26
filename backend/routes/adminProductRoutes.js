@@ -10,7 +10,7 @@ import {
     deleteAdminProduct
 } from "../controllers/adminProductController.js";
 
-import { adminAuth } from "../middleware/adminAuth.js";
+import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
 
 
 const router = express.Router();
@@ -245,6 +245,7 @@ router.get(
     "/",
 
     adminAuth,
+    requirePermission("products.view"),
 
     getAdminProducts
 
@@ -263,6 +264,7 @@ router.post(
     "/",
 
     adminAuth,
+    requirePermission("products.manage"),
 
     uploadImage,
 
@@ -283,6 +285,7 @@ router.put(
     "/:id",
 
     adminAuth,
+    requirePermission("products.manage"),
 
     uploadImage,
 
@@ -303,6 +306,7 @@ router.delete(
     "/:id",
 
     adminAuth,
+    requirePermission("products.manage"),
 
     deleteAdminProduct
 

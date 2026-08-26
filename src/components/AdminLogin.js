@@ -210,3 +210,11 @@ export function logoutAdmin() {
         "/admin.html";
 
 }
+
+export function getAdminUser() {
+    try {
+        return JSON.parse(localStorage.getItem("nutridust-admin-user") || "null");
+    } catch {
+        return null;
+    }
+}

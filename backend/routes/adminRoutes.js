@@ -1,14 +1,16 @@
 import express from "express";
 
 import {
-    adminLogin
+    adminLogin,
+    getAdminSession
 } from "../controllers/adminController.js";
-import { adminAuth } from "../middleware/adminAuth.js";
+import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
 import { getOperationsSummary, runAutomationNow } from "../controllers/operationsController.js";
 
 const router = express.Router();
-router.get("/operations", adminAuth, getOperationsSummary);
-router.post("/operations/run", adminAuth, runAutomationNow);
+router.get("/session", adminAuth, getAdminSession);
+router.get("/operations", adminAuth, requirePermission("operations.view"), getOperationsSummary);
+router.post("/operations/run", adminAuth, requirePermission("operations.run"), runAutomationNow);
 
 
 // =====================================================

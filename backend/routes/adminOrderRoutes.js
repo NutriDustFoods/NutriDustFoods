@@ -6,7 +6,7 @@ import {
     updateAdminOrderStatus
 } from "../controllers/adminOrderController.js";
 
-import { adminAuth } from "../middleware/adminAuth.js";
+import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
 
 
 const router = express.Router();
@@ -27,6 +27,7 @@ router.use(adminAuth);
 
 router.get(
     "/",
+    requirePermission("orders.view"),
     getAdminOrders
 );
 
@@ -38,6 +39,7 @@ router.get(
 
 router.get(
     "/:id",
+    requirePermission("orders.view"),
     getAdminOrderById
 );
 
@@ -49,6 +51,7 @@ router.get(
 
 router.patch(
     "/:id/status",
+    requirePermission("orders.update"),
     updateAdminOrderStatus
 );
 

@@ -22,7 +22,8 @@ import {
 import {
     AdminLogin,
     loginAdmin,
-    isAdminLoggedIn
+    isAdminLoggedIn,
+    getAdminUser
 } from "./components/AdminLogin.js";
 import { AdminStaff, setupAdminStaff } from "./components/AdminStaff.js";
 import { AdminRiders, setupAdminRiders } from "./components/AdminRiders.js";
@@ -47,6 +48,20 @@ const API = axios.create({
 
 const app =
     document.querySelector("#app");
+
+const viewPermissions = {
+    orders: "orders.view",
+    operations: "operations.view",
+    products: "products.view",
+    riders: "riders.view",
+    withdrawals: "withdrawals.manage",
+    staff: "staff.manage"
+};
+
+const can = (permission, user = getAdminUser()) =>
+    user?.role === "admin" || user?.permissions?.includes("*") || user?.permissions?.includes(permission);
+
+window.nutridustAdminCan = permission => can(permission);
 
 
 // =====================================================
@@ -303,7 +318,7 @@ async function verifyAdminToken() {
 
         const response =
             await API.get(
-                "/admin/orders",
+                "/admin/session",
                 {
 
                     headers: {
@@ -317,9 +332,12 @@ async function verifyAdminToken() {
             );
 
 
-        return (
-            response.status === 200
-        );
+        if (response.status === 200 && response.data?.admin) {
+            localStorage.setItem("nutridust-admin-user", JSON.stringify(response.data.admin));
+            return response.data.admin;
+        }
+
+        return null;
 
 
     } catch (error) {
@@ -353,42 +371,52 @@ async function verifyAdminToken() {
 // SHOW DASHBOARD
 // =====================================================
 
-function showAdminDashboard() {
+function showAdminDashboard(user) {
+
+    const allowed = name => can(viewPermissions[name], user);
+    const button = (name, icon, label, active = false) => allowed(name)
+        ? `<button class="admin-task ${active ? "active" : ""}" data-admin-target="${name}" role="tab"><i class="bi ${icon}"></i><span>${label}</span></button>`
+        : "";
+    const view = (name, content) => allowed(name)
+        ? `<div class="admin-view" data-admin-view="${name}" hidden>${content}</div>`
+        : "";
+    const firstView = Object.keys(viewPermissions).find(allowed);
 
     app.innerHTML = `
         <div class="admin-workspace">
             <nav class="admin-taskbar" aria-label="Admin tasks">
-                <div class="admin-taskbar__brand"><span>NutriDust</span><small>Operations</small></div>
+                <div class="admin-taskbar__brand"><span>NutriDust</span><small>${user?.role === "admin" ? "Administrator" : user?.jobRole || "Staff"}</small></div>
                 <div class="admin-taskbar__items" role="tablist">
-                    <button class="admin-task active" data-admin-target="orders" role="tab"><i class="bi bi-receipt"></i><span>Orders</span></button>
-                    <button class="admin-task" data-admin-target="operations" role="tab"><i class="bi bi-speedometer2"></i><span>Overview</span></button>
-                    <button class="admin-task" data-admin-target="products" role="tab"><i class="bi bi-box-seam"></i><span>Products &amp; Stock</span></button>
-                    <button class="admin-task" data-admin-target="riders" role="tab"><i class="bi bi-bicycle"></i><span>Riders</span></button>
-                    <button class="admin-task" data-admin-target="withdrawals" role="tab"><i class="bi bi-wallet2"></i><span>Withdrawals</span></button>
-                    <button class="admin-task" data-admin-target="staff" role="tab"><i class="bi bi-people"></i><span>Staff</span></button>
+                    ${button("orders", "bi-receipt", "Orders", firstView === "orders")}
+                    ${button("operations", "bi-speedometer2", "Overview", firstView === "operations")}
+                    ${button("products", "bi-box-seam", "Products & Stock", firstView === "products")}
+                    ${button("riders", "bi-bicycle", "Riders", firstView === "riders")}
+                    ${button("withdrawals", "bi-wallet2", "Withdrawals", firstView === "withdrawals")}
+                    ${button("staff", "bi-people", "Staff", firstView === "staff")}
                 </div>
             </nav>
             <main class="admin-view-stack">
-                <div class="admin-view" data-admin-view="orders">${AdminDashboard()}</div>
-                <div class="admin-view" data-admin-view="operations" hidden>${AdminOperations()}</div>
-                <div class="admin-view" data-admin-view="products" hidden>${AdminProducts()}</div>
-                <div class="admin-view" data-admin-view="riders" hidden>${AdminRiders()}</div>
-                <div class="admin-view" data-admin-view="withdrawals" hidden>${AdminWithdrawals()}</div>
-                <div class="admin-view" data-admin-view="staff" hidden>${AdminStaff()}</div>
+                ${view("orders", AdminDashboard())}
+                ${view("operations", AdminOperations())}
+                ${view("products", AdminProducts())}
+                ${view("riders", AdminRiders())}
+                ${view("withdrawals", AdminWithdrawals())}
+                ${view("staff", AdminStaff())}
             </main>
         </div>
 
     `;
 
-    setupAdminWorkspaceNavigation();
+    document.querySelector(`[data-admin-view="${firstView}"]`)?.removeAttribute("hidden");
+    setupAdminWorkspaceNavigation(firstView);
 
 }
 
-function setupAdminWorkspaceNavigation() {
+function setupAdminWorkspaceNavigation(defaultView = "orders") {
     const buttons=[...document.querySelectorAll("[data-admin-target]")],views=[...document.querySelectorAll("[data-admin-view]")];
     const valid=new Set(views.map(view=>view.dataset.adminView));
     const show=name=>{
-        const selected=valid.has(name)?name:"orders";
+        const selected=valid.has(name)?name:defaultView;
         views.forEach(view=>view.hidden=view.dataset.adminView!==selected);
         buttons.forEach(button=>{const active=button.dataset.adminTarget===selected;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));});
         if(location.hash!==`#${selected}`) history.replaceState(null,"",`#${selected}`);
@@ -396,7 +424,7 @@ function setupAdminWorkspaceNavigation() {
     };
     buttons.forEach(button=>button.addEventListener("click",()=>show(button.dataset.adminTarget)));
     window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
-    show(location.hash.slice(1)||"orders");
+    show(location.hash.slice(1)||defaultView);
 }
 
 function startSilentAdminRefresh() {
@@ -471,7 +499,8 @@ async function initAdmin() {
     // SHOW DASHBOARD
     // -------------------------------------------------
 
-    showAdminDashboard();
+    const user = authenticated;
+    showAdminDashboard(user);
     startSilentAdminRefresh();
 
 
@@ -486,32 +515,32 @@ async function initAdmin() {
     // ORDERS
     // -------------------------------------------------
 
-    await loadAdminOrders();
-    await setupAdminOperations();
+    if (can("orders.view", user)) await loadAdminOrders();
+    if (can("operations.view", user)) await setupAdminOperations();
 
 
     // -------------------------------------------------
     // FILTERS
     // -------------------------------------------------
 
-    setupAdminFilters();
+    if (can("orders.view", user)) setupAdminFilters();
 
 
     // -------------------------------------------------
     // REFRESH
     // -------------------------------------------------
 
-    setupAdminRefresh();
+    if (can("orders.view", user)) setupAdminRefresh();
 
 
     // -------------------------------------------------
     // PRODUCTS
     // -------------------------------------------------
 
-    setupAdminProducts();
-    await setupAdminStaff();
-    await setupAdminRiders();
-    await setupAdminWithdrawals();
+    if (can("products.view", user)) setupAdminProducts();
+    if (can("staff.manage", user)) await setupAdminStaff();
+    if (can("riders.view", user)) await setupAdminRiders();
+    if (can("withdrawals.manage", user)) await setupAdminWithdrawals();
 
 
     console.log(

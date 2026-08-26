@@ -8,13 +8,13 @@ import {
 } from "../controllers/adminInventoryController.js";
 import { exportInventoryExcel, exportInventoryPdf } from "../controllers/inventoryReportController.js";
 
-import { adminAuth } from "../middleware/adminAuth.js";
+import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
 
 
 const router = express.Router();
 
-router.get("/reports/excel", adminAuth, exportInventoryExcel);
-router.get("/reports/pdf", adminAuth, exportInventoryPdf);
+router.get("/reports/excel", adminAuth, requirePermission("inventory.view"), exportInventoryExcel);
+router.get("/reports/pdf", adminAuth, requirePermission("inventory.view"), exportInventoryPdf);
 
 
 // =====================================================
@@ -24,6 +24,7 @@ router.get("/reports/pdf", adminAuth, exportInventoryPdf);
 router.get(
     "/",
     adminAuth,
+    requirePermission("inventory.view"),
     getInventory
 );
 
@@ -35,6 +36,7 @@ router.get(
 router.post(
     "/:productId/production",
     adminAuth,
+    requirePermission("inventory.manage"),
     addProduction
 );
 
@@ -46,6 +48,7 @@ router.post(
 router.patch(
     "/:productId/adjust",
     adminAuth,
+    requirePermission("inventory.manage"),
     adjustInventory
 );
 
@@ -57,6 +60,7 @@ router.patch(
 router.get(
     "/:productId/history",
     adminAuth,
+    requirePermission("inventory.view"),
     getInventoryHistory
 );
 

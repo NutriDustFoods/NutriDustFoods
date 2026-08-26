@@ -884,6 +884,7 @@ db.exec(`
         phone TEXT,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'staff',
+        permissions TEXT NOT NULL DEFAULT '[]',
         account_status TEXT NOT NULL DEFAULT 'active',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -891,6 +892,11 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_staff_users_role ON staff_users(role);
     CREATE INDEX IF NOT EXISTS idx_staff_users_status ON staff_users(account_status);
 `);
+
+const staffColumns = db.prepare("PRAGMA table_info(staff_users)").all();
+if (!staffColumns.some(column => column.name === "permissions")) {
+    db.exec("ALTER TABLE staff_users ADD COLUMN permissions TEXT NOT NULL DEFAULT '[]'");
+}
 
 console.log("✅ Rider and delivery tables ready");
 

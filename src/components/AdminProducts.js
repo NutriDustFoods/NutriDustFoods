@@ -1104,6 +1104,10 @@ export async function loadAdminProducts() {
 
 function attachProductButtons(products) {
 
+    if (!window.nutridustAdminCan?.("products.manage")) {
+        document.querySelectorAll(".edit-product, .delete-product").forEach(button => button.remove());
+    }
+
     document
         .querySelectorAll(".edit-product")
         .forEach(button => {
@@ -2509,6 +2513,14 @@ function setupImagePreview() {
 // =====================================================
 
 export function setupAdminProducts() {
+
+    if (!window.nutridustAdminCan?.("products.manage")) {
+        document.getElementById("addProductButton")?.remove();
+    }
+    if (!window.nutridustAdminCan?.("inventory.manage")) {
+        document.getElementById("addProductionButton")?.remove();
+        document.getElementById("adjustInventoryButton")?.remove();
+    }
 
     document
         .getElementById(

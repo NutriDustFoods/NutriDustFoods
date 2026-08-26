@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import db from "../config/sqlite.js";
+import { hasPermission, parsePermissions } from "../auth/adminPermissions.js";
 
 
 // =====================================================
@@ -66,24 +68,35 @@ export const adminAuth = (req, res, next) => {
                 process.env.JWT_SECRET
             );
 
-        if (decoded?.role !== "admin") {
+        if (decoded?.role === "admin") {
+            req.admin = { ...decoded, permissions: ["*"] };
+            return next();
+        }
+
+        if (decoded?.role !== "staff" || !decoded?.staffId) {
             return res.status(403).json({
                 success: false,
                 message: "Administrator access required."
             });
         }
 
+        const staff = db.prepare(`
+            SELECT id, full_name, username, role, permissions, account_status
+            FROM staff_users WHERE id = ?
+        `).get(Number(decoded.staffId));
 
-        // -------------------------------------------------
-        // Attach admin information
-        // -------------------------------------------------
+        if (!staff || staff.account_status !== "active") {
+            return res.status(403).json({ success: false, message: "This staff account is inactive." });
+        }
 
-        req.admin = decoded;
-
-
-        // -------------------------------------------------
-        // Continue
-        // -------------------------------------------------
+        req.admin = {
+            staffId: staff.id,
+            username: staff.username,
+            fullName: staff.full_name,
+            role: "staff",
+            jobRole: staff.role,
+            permissions: parsePermissions(staff.permissions)
+        };
 
         next();
 
@@ -107,4 +120,12 @@ export const adminAuth = (req, res, next) => {
 
     }
 
+};
+
+export const requirePermission = permission => (req, res, next) => {
+    if (hasPermission(req.admin, permission)) return next();
+    return res.status(403).json({
+        success: false,
+        message: "You do not have permission to perform this task."
+    });
 };
