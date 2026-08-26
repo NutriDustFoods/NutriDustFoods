@@ -5,26 +5,151 @@ import {
     verifyPayment
 } from "../services/paystackService.js";
 
+import {
+    ACTIVE_PAYMENT_STATUSES,
+    FAILED_PAYMENT_STATUSES,
+    releaseFailedPaymentReservation
+} from "../services/paymentCleanupService.js";
+import { autoAssignPaidOrder } from "../services/riderDispatchService.js";
+
 
 // =====================================================
-// INITIALIZE ORDER PAYMENT
+// HELPER: GET AUTHENTICATED CUSTOMER
 // =====================================================
 
-export const initializeOrderPayment = async (req, res) => {
+const getAuthenticatedCustomer = (req) => {
+
+    const customerId =
+        Number(
+            req.customer?.id
+        );
+
+
+    if (
+        !Number.isInteger(customerId) ||
+        customerId <= 0
+    ) {
+
+        return null;
+
+    }
+
+
+    return db.prepare(`
+        SELECT
+            id,
+            name,
+            email,
+            phone
+        FROM customers
+        WHERE id = ?
+    `).get(
+        customerId
+    );
+
+};
+
+
+// =====================================================
+// HELPER: PARSE ORDER ITEMS
+// =====================================================
+
+const parseOrderItems = (order) => {
+
+    if (!order) {
+
+        return order;
+
+    }
+
 
     try {
 
-        const { orderId } = req.body;
+        order.items =
+            typeof order.items === "string"
+
+                ? JSON.parse(
+                    order.items
+                )
+
+                : order.items;
+
+    } catch {
+
+        order.items = [];
+
+    }
 
 
-        if (!orderId) {
+    return order;
 
-            return res.status(400).json({
+};
+
+
+// =====================================================
+// HELPER: GET CUSTOMER ORDER
+// =====================================================
+
+const getCustomerOrder = (
+    orderId,
+    customerId
+) => {
+
+    return db.prepare(`
+        SELECT *
+        FROM orders
+        WHERE
+            id = ?
+            AND customer_id = ?
+    `).get(
+
+        orderId,
+
+        customerId
+
+    );
+
+};
+
+
+// =====================================================
+// INITIALIZE ORDER PAYMENT
+// POST /api/payments/initialize
+// =====================================================
+//
+// SECURITY:
+//
+// Customer must be authenticated.
+//
+// The order MUST belong to the authenticated customer.
+//
+// =====================================================
+
+export const initializeOrderPayment = async (
+    req,
+    res
+) => {
+
+    try {
+
+        // =================================================
+        // AUTHENTICATED CUSTOMER
+        // =================================================
+
+        const customer =
+            getAuthenticatedCustomer(
+                req
+            );
+
+
+        if (!customer) {
+
+            return res.status(401).json({
 
                 success: false,
 
                 message:
-                    "Order ID is required."
+                    "Authentication required. Please login."
 
             });
 
@@ -32,14 +157,49 @@ export const initializeOrderPayment = async (req, res) => {
 
 
         // =================================================
-        // FIND ORDER
+        // ORDER ID
         // =================================================
 
-        const order = db.prepare(`
-            SELECT *
-            FROM orders
-            WHERE id = ?
-        `).get(orderId);
+        const orderId =
+            Number(
+                req.body?.orderId
+            );
+
+
+        if (
+
+            !Number.isInteger(
+                orderId
+            ) ||
+
+            orderId <= 0
+
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "A valid order ID is required."
+
+            });
+
+        }
+
+
+        // =================================================
+        // FIND CUSTOMER ORDER
+        // =================================================
+
+        const order =
+            getCustomerOrder(
+
+                orderId,
+
+                customer.id
+
+            );
 
 
         if (!order) {
@@ -57,7 +217,7 @@ export const initializeOrderPayment = async (req, res) => {
 
 
         // =================================================
-        // PREVENT DUPLICATE PAYMENT
+        // ALREADY PAID
         // =================================================
 
         if (
@@ -77,28 +237,67 @@ export const initializeOrderPayment = async (req, res) => {
 
 
         // =================================================
+        // CANCELLED ORDER
+        // =================================================
+
+        if (
+            order.order_status === "cancelled"
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "This order has been cancelled and cannot be paid."
+
+            });
+
+        }
+
+
+        // =================================================
         // CUSTOMER EMAIL
         // =================================================
 
         const email =
-            order.customer_email;
+            String(
+                customer.email || ""
+            ).trim();
+
+
+        if (!email) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Your customer account does not have a valid email address."
+
+            });
+
+        }
 
 
         // =================================================
-        // CONVERT NAIRA TO KOBO
+        // ORDER AMOUNT
         // =================================================
 
-        const amount =
-            Math.round(
-                Number(
-                    order.total_amount
-                ) * 100
+        const orderAmount =
+            Number(
+                order.total_amount
             );
 
 
         if (
-            !Number.isFinite(amount) ||
-            amount <= 0
+
+            !Number.isFinite(
+                orderAmount
+            ) ||
+
+            orderAmount <= 0
+
         ) {
 
             return res.status(400).json({
@@ -114,7 +313,33 @@ export const initializeOrderPayment = async (req, res) => {
 
 
         // =================================================
-        // CREATE PAYMENT REFERENCE
+        // NAIRA → KOBO
+        // =================================================
+
+        const amount =
+            Math.round(
+                orderAmount * 100
+            );
+
+
+        if (
+            amount <= 0
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Invalid payment amount."
+
+            });
+
+        }
+
+
+        // =================================================
+        // CREATE UNIQUE PAYMENT REFERENCE
         // =================================================
 
         const reference =
@@ -133,12 +358,17 @@ export const initializeOrderPayment = async (req, res) => {
         console.log(
             "💳 Initializing Paystack payment:",
             {
+
                 orderId:
                     order.id,
+
+                customerId:
+                    customer.id,
 
                 amount,
 
                 reference
+
             }
         );
 
@@ -162,9 +392,13 @@ export const initializeOrderPayment = async (req, res) => {
 
 
         if (
+
             !payment ||
+
             !payment.status ||
+
             !payment.data
+
         ) {
 
             return res.status(500).json({
@@ -187,25 +421,49 @@ export const initializeOrderPayment = async (req, res) => {
         // SAVE PAYMENT REFERENCE
         // =================================================
 
-        db.prepare(`
-            UPDATE orders
+        const update =
+            db.prepare(`
+                UPDATE orders
 
-            SET
-                payment_reference = ?,
+                SET
+                    payment_reference = ?,
 
-                payment_status = 'pending',
+                    payment_status = 'pending',
 
-                updated_at =
-                    CURRENT_TIMESTAMP
+                    updated_at =
+                        CURRENT_TIMESTAMP
 
-            WHERE id = ?
-        `).run(
+                WHERE
+                    id = ?
 
-            paystackReference,
+                    AND customer_id = ?
 
-            order.id
+                    AND payment_status != 'paid'
+            `).run(
 
-        );
+                paystackReference,
+
+                order.id,
+
+                customer.id
+
+            );
+
+
+        if (
+            update.changes !== 1
+        ) {
+
+            return res.status(409).json({
+
+                success: false,
+
+                message:
+                    "The order could not be prepared for payment."
+
+            });
+
+        }
 
 
         console.log(
@@ -214,7 +472,11 @@ export const initializeOrderPayment = async (req, res) => {
         );
 
 
-        res.status(200).json({
+        // =================================================
+        // SUCCESS
+        // =================================================
+
+        return res.status(200).json({
 
             success: true,
 
@@ -244,7 +506,7 @@ export const initializeOrderPayment = async (req, res) => {
         );
 
 
-        res.status(500).json({
+        return res.status(500).json({
 
             success: false,
 
@@ -259,20 +521,61 @@ export const initializeOrderPayment = async (req, res) => {
 };
 
 
-
 // =====================================================
 // VERIFY ORDER PAYMENT
+// GET /api/payments/verify/:reference
+// =====================================================
+//
+// SECURITY:
+//
+// Customer must be authenticated.
+//
+// Payment reference MUST belong to that customer.
+//
 // =====================================================
 
-export const verifyOrderPayment = async (req, res) => {
+export const verifyOrderPayment = async (
+    req,
+    res
+) => {
 
     try {
 
-        const { reference } =
-            req.params;
+        // =================================================
+        // AUTHENTICATED CUSTOMER
+        // =================================================
+
+        const customer =
+            getAuthenticatedCustomer(
+                req
+            );
 
 
-        if (!reference) {
+        if (!customer) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                message:
+                    "Authentication required. Please login."
+
+            });
+
+        }
+
+
+        // =================================================
+        // PAYMENT REFERENCE
+        // =================================================
+
+        const cleanReference =
+            String(
+                req.params?.reference || ""
+            ).trim();
+
+
+        if (!cleanReference) {
 
             return res.status(400).json({
 
@@ -288,52 +591,39 @@ export const verifyOrderPayment = async (req, res) => {
 
         console.log(
             "🔍 Verifying Paystack payment:",
-            reference
+            {
+
+                reference:
+                    cleanReference,
+
+                customerId:
+                    customer.id
+
+            }
         );
 
 
         // =================================================
-        // VERIFY WITH PAYSTACK
-        // =================================================
-
-        const payment =
-            await verifyPayment(
-                reference
-            );
-
-
-        if (
-            !payment ||
-            !payment.status ||
-            !payment.data
-        ) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "Unable to verify payment."
-
-            });
-
-        }
-
-
-        const transaction =
-            payment.data;
-
-
-        // =================================================
-        // FIND ORDER
+        // FIND CUSTOMER'S ORDER
         // =================================================
 
         const order =
             db.prepare(`
                 SELECT *
                 FROM orders
-                WHERE payment_reference = ?
-            `).get(reference);
+                WHERE
+                    payment_reference = ?
+
+                    AND
+
+                    customer_id = ?
+            `).get(
+
+                cleanReference,
+
+                customer.id
+
+            );
 
 
         if (!order) {
@@ -351,16 +641,15 @@ export const verifyOrderPayment = async (req, res) => {
 
 
         // =================================================
-        // PREVENT DOUBLE PROCESSING
+        // ALREADY PAID
         // =================================================
 
         if (
             order.payment_status === "paid"
         ) {
 
-            console.log(
-                "ℹ️ Order already processed:",
-                order.id
+            parseOrderItems(
+                order
             );
 
 
@@ -382,6 +671,67 @@ export const verifyOrderPayment = async (req, res) => {
 
 
         // =================================================
+        // VERIFY WITH PAYSTACK
+        // =================================================
+
+        const payment =
+            await verifyPayment(
+                cleanReference
+            );
+
+
+        if (
+
+            !payment ||
+
+            !payment.status ||
+
+            !payment.data
+
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Unable to verify payment."
+
+            });
+
+        }
+
+
+        const transaction =
+            payment.data;
+
+
+        // =================================================
+        // VERIFY REFERENCE
+        // =================================================
+
+        if (
+
+            transaction.reference &&
+
+            transaction.reference !==
+                cleanReference
+
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Payment reference verification failed."
+
+            });
+
+        }
+
+
+        // =================================================
         // VERIFY AMOUNT
         // =================================================
 
@@ -393,26 +743,36 @@ export const verifyOrderPayment = async (req, res) => {
 
         const expectedAmount =
             Math.round(
+
                 Number(
                     order.total_amount
                 ) * 100
+
             );
 
 
         if (
-            !Number.isFinite(paidAmount) ||
-            paidAmount !== expectedAmount
+
+            !Number.isFinite(
+                paidAmount
+            ) ||
+
+            paidAmount !==
+                expectedAmount
+
         ) {
 
             console.error(
                 "❌ Payment amount mismatch:",
                 {
+
                     orderId:
                         order.id,
 
                     expectedAmount,
 
                     paidAmount
+
                 }
             );
 
@@ -430,7 +790,7 @@ export const verifyOrderPayment = async (req, res) => {
 
 
         // =================================================
-        // PARSE ORDER ITEMS
+        // PARSE ITEMS
         // =================================================
 
         let items;
@@ -440,16 +800,14 @@ export const verifyOrderPayment = async (req, res) => {
 
             items =
                 typeof order.items === "string"
-                    ? JSON.parse(order.items)
+
+                    ? JSON.parse(
+                        order.items
+                    )
+
                     : order.items;
 
-        } catch (error) {
-
-            console.error(
-                "❌ Invalid order items JSON:",
-                error
-            );
-
+        } catch {
 
             return res.status(500).json({
 
@@ -464,8 +822,13 @@ export const verifyOrderPayment = async (req, res) => {
 
 
         if (
-            !Array.isArray(items) ||
+
+            !Array.isArray(
+                items
+            ) ||
+
             items.length === 0
+
         ) {
 
             return res.status(400).json({
@@ -485,25 +848,27 @@ export const verifyOrderPayment = async (req, res) => {
         // =================================================
 
         const normalizedItems =
-            items.map(item => ({
+            items.map(
+                item => ({
 
-                productId:
-                    Number(
-                        item.productId ||
-                        item.id ||
-                        item._id
-                    ),
+                    productId:
+                        Number(
+                            item.productId
+                        ),
 
-                quantity:
-                    Number(
-                        item.quantity
-                    ),
+                    quantity:
+                        Number(
+                            item.quantity
+                        ),
 
-                name:
-                    item.name ||
-                    "Product"
+                    name:
+                        String(
+                            item.name ||
+                            "Product"
+                        )
 
-            }));
+                })
+            );
 
 
         // =================================================
@@ -516,10 +881,13 @@ export const verifyOrderPayment = async (req, res) => {
         ) {
 
             if (
+
                 !Number.isInteger(
                     item.productId
                 ) ||
+
                 item.productId <= 0
+
             ) {
 
                 return res.status(400).json({
@@ -535,10 +903,13 @@ export const verifyOrderPayment = async (req, res) => {
 
 
             if (
+
                 !Number.isInteger(
                     item.quantity
                 ) ||
+
                 item.quantity <= 0
+
             ) {
 
                 return res.status(400).json({
@@ -556,209 +927,307 @@ export const verifyOrderPayment = async (req, res) => {
 
 
         // =================================================
-        // PAYMENT FAILED
-        // =================================================
-        //
-        // IMPORTANT:
-        //
-        // The order controller already reserved the stock.
-        //
-        // Therefore, if payment fails:
-        //
-        // available += quantity
-        // reserved  -= quantity
-        // sold       stays the same
-        //
+        // PAYMENT NOT SUCCESSFUL
         // =================================================
 
         if (
-            transaction.status !==
-            "success"
+            transaction.status !== "success"
         ) {
 
-            const releaseReservation =
-                db.transaction(() => {
+            // =============================================
+            // IMPORTANT IDEMPOTENCY CHECK
+            // =============================================
+            //
+            // If the order is already cancelled because
+            // the failed payment was previously processed,
+            // DO NOT release inventory again.
+            //
+            // =============================================
 
-                    for (
-                        const item
-                        of normalizedItems
-                    ) {
+            if (
+                order.order_status === "cancelled"
+            ) {
 
-                        const inventory =
-                            db.prepare(`
-                                SELECT
-                                    quantity_available,
-                                    reserved_quantity
-                                FROM inventory
-                                WHERE product_id = ?
-                            `).get(
-                                item.productId
-                            );
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Payment was not successful. The order has already been cancelled and reserved stock released.",
+
+                    paymentStatus:
+                        transaction.status,
+
+                    stockReleased:
+                        true,
+
+                    alreadyProcessed:
+                        true
+
+                });
+
+            }
+
+            // Use the same atomic, idempotent release path as the background
+            // cleanup worker. This prevents a verification request racing the
+            // worker (or an admin cancellation) from releasing stock twice.
+            const paystackStatus = String(transaction.status || "").trim().toLowerCase();
+
+            if (FAILED_PAYMENT_STATUSES.has(paystackStatus)) {
+                const releaseResult = releaseFailedPaymentReservation({
+                    orderId: order.id,
+                    paystackStatus,
+                    performedBy: "SYSTEM:CUSTOMER_PAYMENT_VERIFY"
+                });
+
+                return res.status(400).json({
+                    success: false,
+                    message: releaseResult.released
+                        ? "Payment was not successful. Reserved stock has been released."
+                        : "Payment was not successful. The order has already been cancelled or processed.",
+                    paymentStatus: paystackStatus,
+                    stockReleased: releaseResult.released || releaseResult.reason === "already_cancelled",
+                    alreadyProcessed: !releaseResult.released
+                });
+            }
+
+            return res.status(400).json({
+                success: false,
+                message: "Payment is still processing. Reserved stock was kept.",
+                paymentStatus: paystackStatus,
+                stockReleased: false
+            });
 
 
-                        if (!inventory) {
+            try {
 
-                            throw new Error(
-                                `Inventory record not found for ${item.name}.`
-                            );
+                const releaseReservation =
+                    db.transaction(() => {
 
-                        }
+                        // =====================================
+                        // VERIFY RESERVATIONS
+                        // =====================================
 
-
-                        // -------------------------------------
-                        // Make sure enough quantity is reserved
-                        // -------------------------------------
-
-                        if (
-                            Number(
-                                inventory.reserved_quantity
-                            ) <
-                            item.quantity
+                        for (
+                            const item
+                            of normalizedItems
                         ) {
 
-                            throw new Error(
+                            const inventory =
+                                db.prepare(`
+                                    SELECT
+                                        quantity_available,
+                                        reserved_quantity
+                                    FROM inventory
+                                    WHERE product_id = ?
+                                `).get(
+                                    item.productId
+                                );
 
-                                `Reserved stock mismatch for ${item.name}.`
+
+                            if (!inventory) {
+
+                                throw new Error(
+                                    `Inventory record not found for ${item.name}.`
+                                );
+
+                            }
+
+
+                            if (
+
+                                Number(
+                                    inventory.reserved_quantity
+                                ) <
+
+                                item.quantity
+
+                            ) {
+
+                                throw new Error(
+
+                                    `Reserved stock mismatch for ${item.name}.`
+
+                                );
+
+                            }
+
+                        }
+
+
+                        // =====================================
+                        // RELEASE RESERVATIONS
+                        // =====================================
+
+                        for (
+                            const item
+                            of normalizedItems
+                        ) {
+
+                            db.prepare(`
+                                UPDATE inventory
+
+                                SET
+                                    quantity_available =
+                                        quantity_available + ?,
+
+                                    reserved_quantity =
+                                        reserved_quantity - ?,
+
+                                    updated_at =
+                                        CURRENT_TIMESTAMP
+
+                                WHERE
+                                    product_id = ?
+
+                                    AND
+
+                                    reserved_quantity >= ?
+                            `).run(
+
+                                item.quantity,
+
+                                item.quantity,
+
+                                item.productId,
+
+                                item.quantity
+
+                            );
+
+
+                            // =================================
+                            // INVENTORY MOVEMENT
+                            // =================================
+
+                            db.prepare(`
+                                INSERT INTO inventory_movements (
+
+                                    product_id,
+
+                                    movement_type,
+
+                                    quantity,
+
+                                    reference_id,
+
+                                    note,
+
+                                    performed_by
+
+                                )
+
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            `).run(
+
+                                item.productId,
+
+                                "release",
+
+                                item.quantity,
+
+                                order.id,
+
+                                `Payment failed for Order #${order.id}. ${item.quantity} unit(s) returned to available stock`,
+
+                                "SYSTEM"
 
                             );
 
                         }
 
 
-                        // -------------------------------------
-                        // RELEASE RESERVATION
-                        // -------------------------------------
+                        // =====================================
+                        // CANCEL ORDER
+                        // =====================================
 
                         db.prepare(`
-                            UPDATE inventory
+                            UPDATE orders
 
                             SET
-                                quantity_available =
-                                    quantity_available + ?,
+                                payment_status = ?,
 
-                                reserved_quantity =
-                                    reserved_quantity - ?,
+                                order_status = 'cancelled',
 
                                 updated_at =
                                     CURRENT_TIMESTAMP
 
-                            WHERE product_id = ?
+                            WHERE
+                                id = ?
+
+                                AND customer_id = ?
+
+                                AND payment_status != 'paid'
                         `).run(
 
-                            item.quantity,
-
-                            item.quantity,
-
-                            item.productId
-
-                        );
-
-
-                        // -------------------------------------
-                        // RECORD RELEASE
-                        // -------------------------------------
-
-                        db.prepare(`
-                            INSERT INTO inventory_movements (
-                                product_id,
-                                movement_type,
-                                quantity,
-                                reference_id,
-                                note
-                            )
-                            VALUES (?, ?, ?, ?, ?)
-                        `).run(
-
-                            item.productId,
-
-                            "release",
-
-                            item.quantity,
+                            transaction.status ||
+                                "failed",
 
                             order.id,
 
-                            `Payment failed for Order #${order.id}. ${item.quantity} unit(s) returned to available stock`
+                            customer.id
 
                         );
 
-                    }
+                    });
 
 
-                    // -----------------------------------------
-                    // UPDATE ORDER
-                    // -----------------------------------------
+                releaseReservation();
 
-                    db.prepare(`
-                        UPDATE orders
 
-                        SET
-                            payment_status = ?,
+                return res.status(400).json({
 
-                            order_status = 'cancelled',
+                    success: false,
 
-                            updated_at =
-                                CURRENT_TIMESTAMP
+                    message:
+                        "Payment was not successful. Reserved stock has been released.",
 
-                        WHERE id = ?
-                    `).run(
+                    paymentStatus:
+                        transaction.status,
 
-                        transaction.status ||
-                            "failed",
-
-                        order.id
-
-                    );
+                    stockReleased:
+                        true
 
                 });
 
+            } catch (releaseError) {
 
-            releaseReservation();
-
-
-            console.log(
-                "↩️ Reserved inventory released:",
-                {
-                    orderId:
-                        order.id,
-
-                    paymentStatus:
-                        transaction.status
-                }
-            );
+                console.error(
+                    "❌ Failed to release reserved stock:",
+                    releaseError
+                );
 
 
-            return res.status(400).json({
+                return res.status(500).json({
 
-                success: false,
+                    success: false,
 
-                message:
-                    "Payment was not successful. Reserved stock has been released.",
+                    message:
+                        "Payment was unsuccessful, but the system could not release the reserved stock automatically. Please contact NutriDust Foods.",
 
-                paymentStatus:
-                    transaction.status,
+                    stockReleased:
+                        false
 
-                stockReleased:
-                    true
+                });
 
-            });
+            }
 
         }
 
 
         // =================================================
-        // PAYMENT SUCCESSFUL
+        // SUCCESSFUL PAYMENT
         // =================================================
         //
-        // VERY IMPORTANT:
+        // IMPORTANT:
         //
-        // DO NOT reduce quantity_available here.
+        // quantity_available was already decreased during
+        // order creation.
         //
-        // The order controller already reduced it when
-        // the stock was reserved.
-        //
-        // We only:
+        // Therefore:
         //
         // reserved_quantity -= quantity
+        //
         // total_sold += quantity
         //
         // =================================================
@@ -769,7 +1238,7 @@ export const verifyOrderPayment = async (req, res) => {
                 db.transaction(() => {
 
                     // =========================================
-                    // CHECK ALL RESERVED STOCK
+                    // VERIFY RESERVATIONS
                     // =========================================
 
                     for (
@@ -788,10 +1257,12 @@ export const verifyOrderPayment = async (req, res) => {
                                 FROM inventory
 
                                 INNER JOIN products
+
                                     ON products.id =
                                         inventory.product_id
 
-                                WHERE inventory.product_id = ?
+                                WHERE
+                                    inventory.product_id = ?
                             `).get(
                                 item.productId
                             );
@@ -801,7 +1272,9 @@ export const verifyOrderPayment = async (req, res) => {
 
                             const error =
                                 new Error(
+
                                     `Inventory record not found for ${item.name}.`
+
                                 );
 
 
@@ -814,15 +1287,14 @@ export const verifyOrderPayment = async (req, res) => {
                         }
 
 
-                        // =====================================
-                        // VERIFY RESERVATION
-                        // =====================================
-
                         if (
+
                             Number(
                                 inventory.reserved_quantity
                             ) <
+
                             item.quantity
+
                         ) {
 
                             const error =
@@ -837,22 +1309,6 @@ export const verifyOrderPayment = async (req, res) => {
                                 "RESERVATION_MISMATCH";
 
 
-                            error.productId =
-                                item.productId;
-
-
-                            error.available =
-                                inventory.quantity_available;
-
-
-                            error.reserved =
-                                inventory.reserved_quantity;
-
-
-                            error.requested =
-                                item.quantity;
-
-
                             throw error;
 
                         }
@@ -861,101 +1317,152 @@ export const verifyOrderPayment = async (req, res) => {
 
 
                     // =========================================
-                    // COMPLETE SALE
+// COMPLETE SALE
+// =========================================
+
+for (
+    const item
+    of normalizedItems
+) {
+
+    const update =
+        db.prepare(`
+            UPDATE inventory
+
+            SET
+                total_sold =
+                    total_sold + ?,
+
+                reserved_quantity =
+                    reserved_quantity - ?,
+
+                updated_at =
+                    CURRENT_TIMESTAMP
+
+            WHERE
+                product_id = ?
+
+                AND
+
+                reserved_quantity >= ?
+        `).run(
+
+            item.quantity,
+
+            item.quantity,
+
+            item.productId,
+
+            item.quantity
+
+        );
+
+
+    // =========================================
+    // VERIFY INVENTORY UPDATE
+    // =========================================
+
+    if (
+        update.changes !== 1
+    ) {
+
+        const error =
+            new Error(
+                `Unable to complete inventory sale for ${item.name}.`
+            );
+
+
+        error.code =
+            "SALE_UPDATE_FAILED";
+
+
+        throw error;
+
+    }
+
+
+    // =========================================
+    // RECORD SALE
+    // =========================================
+
+    db.prepare(`
+        INSERT INTO inventory_movements (
+
+            product_id,
+
+            movement_type,
+
+            quantity,
+
+            reference_id,
+
+            note,
+
+            performed_by
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?)
+
+    `).run(
+
+        item.productId,
+
+        "sale",
+
+        item.quantity,
+
+        order.id,
+
+        `Order #${order.id} - ${item.quantity} unit(s) sold`,
+
+        "SYSTEM"
+
+    );
+
+}
                     // =========================================
-
-                    for (
-                        const item
-                        of normalizedItems
-                    ) {
-
-                        // -------------------------------------
-                        // CONVERT RESERVATION TO SALE
-                        // -------------------------------------
-
-                        db.prepare(`
-                            UPDATE inventory
-
-                            SET
-                                total_sold =
-                                    total_sold + ?,
-
-                                reserved_quantity =
-                                    reserved_quantity - ?,
-
-                                updated_at =
-                                    CURRENT_TIMESTAMP
-
-                            WHERE product_id = ?
-                        `).run(
-
-                            item.quantity,
-
-                            item.quantity,
-
-                            item.productId
-
-                        );
-
-
-                        // -------------------------------------
-                        // RECORD SALE
-                        // -------------------------------------
-
-                        db.prepare(`
-                            INSERT INTO inventory_movements (
-                                product_id,
-                                movement_type,
-                                quantity,
-                                reference_id,
-                                note
-                            )
-                            VALUES (?, ?, ?, ?, ?)
-                        `).run(
-
-                            item.productId,
-
-                            "sale",
-
-                            item.quantity,
-
-                            order.id,
-
-                            `Order #${order.id} - ${item.quantity} unit(s) sold`
-
-                        );
-
-                    }
-
-
-                    // =========================================
-                    // MARK ORDER AS PAID
+                    // MARK ORDER PAID
                     // =========================================
 
                     db.prepare(`
                         UPDATE orders
 
                         SET
+                            payment_reference = ?,
+
                             payment_status = 'paid',
 
                             order_status = 'processing',
 
+                            auto_dispatch_eligible = CASE WHEN fulfillment_type='delivery' THEN 1 ELSE 0 END,
+
                             updated_at =
                                 CURRENT_TIMESTAMP
 
-                        WHERE id = ?
+                        WHERE
+                            id = ?
+
+                            AND customer_id = ?
+
+                            AND payment_status != 'paid'
                     `).run(
-                        order.id
+
+                        transaction.reference ||
+                            cleanReference,
+
+                        order.id,
+
+                        customer.id
+
                     );
 
                 });
 
 
-            // =============================================
-            // EXECUTE SUCCESSFUL PAYMENT TRANSACTION
-            // =============================================
-
             processSuccessfulPayment();
+
+            autoAssignPaidOrder(order.id);
 
 
         } catch (inventoryError) {
@@ -970,12 +1477,9 @@ export const verifyOrderPayment = async (req, res) => {
             );
 
 
-            // -------------------------------------------------
-            // IMPORTANT:
-            // We DO NOT mark payment as failed.
-            //
-            // Paystack says payment was successful.
-            // -------------------------------------------------
+            // =================================================
+            // DO NOT CALL PAYMENT FAILED
+            // =================================================
 
             db.prepare(`
                 UPDATE orders
@@ -988,9 +1492,16 @@ export const verifyOrderPayment = async (req, res) => {
                     updated_at =
                         CURRENT_TIMESTAMP
 
-                WHERE id = ?
+                WHERE
+                    id = ?
+
+                    AND customer_id = ?
             `).run(
-                order.id
+
+                order.id,
+
+                customer.id
+
             );
 
 
@@ -1027,6 +1538,9 @@ export const verifyOrderPayment = async (req, res) => {
                 SELECT
                     id,
 
+                    customer_id
+                        AS customerId,
+
                     customer_name
                         AS customerName,
 
@@ -1061,54 +1575,49 @@ export const verifyOrderPayment = async (req, res) => {
 
                 FROM orders
 
-                WHERE id = ?
+                WHERE
+                    id = ?
+
+                    AND customer_id = ?
             `).get(
-                order.id
+
+                order.id,
+
+                customer.id
+
             );
 
 
+        parseOrderItems(
+            updatedOrder
+        );
+
+
         // =================================================
-        // PARSE UPDATED ITEMS
+        // SUCCESS
         // =================================================
-
-        if (updatedOrder) {
-
-            try {
-
-                updatedOrder.items =
-                    JSON.parse(
-                        updatedOrder.items
-                    );
-
-            } catch {
-
-                updatedOrder.items = [];
-
-            }
-
-        }
-
 
         console.log(
-            "✅ Payment verified and inventory sale completed:",
+            "✅ Payment verified successfully:",
             {
+
                 orderId:
                     updatedOrder.id,
+
+                customerId:
+                    customer.id,
 
                 reference:
                     updatedOrder.paymentReference,
 
                 amount:
                     updatedOrder.total
+
             }
         );
 
 
-        // =================================================
-        // SUCCESS RESPONSE
-        // =================================================
-
-        res.status(200).json({
+        return res.status(200).json({
 
             success: true,
 
@@ -1148,7 +1657,7 @@ export const verifyOrderPayment = async (req, res) => {
         );
 
 
-        res.status(500).json({
+        return res.status(500).json({
 
             success: false,
 

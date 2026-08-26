@@ -1,50 +1,218 @@
 import db from "../config/sqlite.js";
+import { calculateDeliveryQuote } from "../services/deliveryPricingService.js";
+
+
+// =====================================================
+// HELPER: PARSE ORDER ITEMS
+// =====================================================
+
+const parseOrderItems = (order) => {
+
+    if (!order) {
+        return order;
+    }
+
+    try {
+
+        order.items =
+            typeof order.items === "string"
+                ? JSON.parse(order.items)
+                : order.items;
+
+    } catch {
+
+        order.items = [];
+
+    }
+
+    return order;
+
+};
+
+
+// =====================================================
+// HELPER: GET AUTHENTICATED CUSTOMER
+// =====================================================
+
+const getAuthenticatedCustomer = (req) => {
+
+    const customerId =
+        Number(req.customer?.id);
+
+
+    if (
+        !Number.isInteger(customerId) ||
+        customerId <= 0
+    ) {
+
+        return null;
+
+    }
+
+
+    return db.prepare(`
+        SELECT
+            id,
+            name,
+            email,
+            phone
+        FROM customers
+        WHERE id = ?
+    `).get(
+        customerId
+    );
+
+};
+
+
+// =====================================================
+// HELPER: GET CUSTOMER ORDER
+// =====================================================
+
+const getCustomerOrder = (
+    orderId,
+    customerId
+) => {
+
+    return db.prepare(`
+        SELECT
+
+            id,
+
+            customer_id
+                AS customerId,
+
+            customer_name
+                AS customerName,
+
+            customer_phone
+                AS customerPhone,
+
+            customer_email
+                AS customerEmail,
+
+            delivery_address
+                AS deliveryAddress,
+
+            fulfillment_type
+                AS fulfillmentType,
+
+            delivery_fee
+                AS deliveryFee,
+
+            items,
+
+            total_amount
+                AS total,
+
+            payment_status
+                AS paymentStatus,
+
+            order_status
+                AS orderStatus,
+
+            payment_reference
+                AS paymentReference,
+
+            created_at
+                AS createdAt,
+
+            updated_at
+                AS updatedAt
+
+        FROM orders
+
+        WHERE
+            id = ?
+
+            AND
+
+            customer_id = ?
+
+    `).get(
+
+        orderId,
+
+        customerId
+
+    );
+
+};
+
+
+// =====================================================
+// HELPER: FORMAT CUSTOMER ORDER
+// =====================================================
+
+const formatOrder = (order) => {
+
+    if (!order) {
+        return null;
+    }
+
+    parseOrderItems(order);
+
+    return order;
+
+};
 
 
 // =====================================================
 // CREATE NEW ORDER
 // POST /api/orders
 // =====================================================
-//
-// Inventory flow:
-//
-// Production:
-//     quantity_available = 100
-//
-// Customer orders 5:
-//     quantity_available = 95
-//     reserved_quantity = 5
-//
-// After successful payment:
-//     quantity_available = 95
-//     reserved_quantity = 0
-//     total_sold = 5
-//
-// =====================================================
 
-export const createOrder = (req, res) => {
+export const createOrder = async (req, res) => {
 
     try {
 
+        // =================================================
+        // AUTHENTICATED CUSTOMER
+        // =================================================
+
+        const customer =
+            getAuthenticatedCustomer(req);
+
+
+        if (!customer) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                message:
+                    "Authentication required. Please login."
+
+            });
+
+        }
+
+
+        // =================================================
+        // REQUEST DATA
+        // =================================================
+
         const {
-            customerName,
-            customerPhone,
-            customerEmail,
             deliveryAddress,
+            fulfillmentType,
             items
         } = req.body;
 
+        const cleanFulfillmentType = String(fulfillmentType || "delivery").trim().toLowerCase();
+        if (!["delivery", "pickup"].includes(cleanFulfillmentType)) {
+            return res.status(400).json({ success: false, message: "Choose delivery or customer pickup." });
+        }
+
 
         // =================================================
-        // BASIC VALIDATION
+        // DELIVERY ADDRESS
         // =================================================
 
         if (
-            !customerName ||
-            !customerPhone ||
-            !customerEmail ||
-            !deliveryAddress ||
-            !items
+            cleanFulfillmentType === "delivery" && (!deliveryAddress ||
+            !String(
+                deliveryAddress
+            ).trim())
         ) {
 
             return res.status(400).json({
@@ -52,12 +220,41 @@ export const createOrder = (req, res) => {
                 success: false,
 
                 message:
-                    "All order information is required."
+                    "Delivery address is required."
 
             });
 
         }
 
+
+        const cleanDeliveryAddress = cleanFulfillmentType === "delivery"
+            ? String(deliveryAddress).trim()
+            : "Customer pickup";
+
+        const deliveryQuote = cleanFulfillmentType === "delivery"
+            ? await calculateDeliveryQuote(cleanDeliveryAddress)
+            : { fee:0, distanceMeters:null };
+
+
+        if (
+            cleanFulfillmentType === "delivery" && cleanDeliveryAddress.length < 5
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Please provide a complete delivery address."
+
+            });
+
+        }
+
+
+        // =================================================
+        // CART VALIDATION
+        // =================================================
 
         if (
             !Array.isArray(items) ||
@@ -77,31 +274,44 @@ export const createOrder = (req, res) => {
 
 
         // =================================================
-        // PREPARE ORDER ITEMS
+        // CONSOLIDATE DUPLICATE PRODUCTS
         // =================================================
 
-        const requestedItems = [];
+        const itemMap =
+            new Map();
 
 
-        for (const item of items) {
+        for (
+            const item
+            of items
+        ) {
 
             const productId =
                 Number(
-                    item.productId ||
-                    item.id ||
-                    item._id
+                    item?.productId ||
+                    item?.id ||
+                    item?._id
                 );
 
 
             const quantity =
                 Number(
-                    item.quantity
+                    item?.quantity
                 );
 
 
+            // =============================================
+            // VALIDATE PRODUCT ID
+            // =============================================
+
             if (
-                !Number.isInteger(productId) ||
+
+                !Number.isInteger(
+                    productId
+                ) ||
+
                 productId <= 0
+
             ) {
 
                 return res.status(400).json({
@@ -116,9 +326,18 @@ export const createOrder = (req, res) => {
             }
 
 
+            // =============================================
+            // VALIDATE QUANTITY
+            // =============================================
+
             if (
-                !Number.isInteger(quantity) ||
+
+                !Number.isInteger(
+                    quantity
+                ) ||
+
                 quantity <= 0
+
             ) {
 
                 return res.status(400).json({
@@ -133,24 +352,58 @@ export const createOrder = (req, res) => {
             }
 
 
-            requestedItems.push({
+            const currentQuantity =
+                itemMap.get(
+                    productId
+                ) || 0;
 
+
+            const newQuantity =
+                currentQuantity +
+                quantity;
+
+
+            if (
+                newQuantity >
+                Number.MAX_SAFE_INTEGER
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Requested quantity is too large."
+
+                });
+
+            }
+
+
+            itemMap.set(
                 productId,
-
-                quantity
-
-            });
+                newQuantity
+            );
 
         }
 
 
+        const requestedItems =
+            Array.from(
+                itemMap.entries()
+            ).map(
+                ([productId, quantity]) => ({
+
+                    productId,
+
+                    quantity
+
+                })
+            );
+
+
         // =================================================
-        // TRANSACTION
-        // =================================================
-        //
-        // Everything inside this transaction succeeds
-        // together or fails together.
-        //
+        // DATABASE TRANSACTION
         // =================================================
 
         const transaction =
@@ -161,14 +414,18 @@ export const createOrder = (req, res) => {
                 let totalAmount = 0;
 
 
-                // =========================================
-                // CHECK EVERY PRODUCT
-                // =========================================
+                // =================================================
+                // PROCESS PRODUCTS
+                // =================================================
 
                 for (
                     const requested
                     of requestedItems
                 ) {
+
+                    // =============================================
+                    // GET PRODUCT
+                    // =============================================
 
                     const product =
                         db.prepare(`
@@ -185,16 +442,24 @@ export const createOrder = (req, res) => {
 
                     if (!product) {
 
-                        throw new Error(
-                            `Product #${requested.productId} was not found.`
-                        );
+                        const error =
+                            new Error(
+                                `Product #${requested.productId} was not found.`
+                            );
+
+
+                        error.code =
+                            "PRODUCT_NOT_FOUND";
+
+
+                        throw error;
 
                     }
 
 
-                    // =====================================
+                    // =============================================
                     // GET INVENTORY
-                    // =====================================
+                    // =============================================
 
                     const inventory =
                         db.prepare(`
@@ -211,12 +476,24 @@ export const createOrder = (req, res) => {
 
                     if (!inventory) {
 
-                        throw new Error(
-                            `${product.name} does not have an inventory record.`
-                        );
+                        const error =
+                            new Error(
+                                `${product.name} does not have an inventory record.`
+                            );
+
+
+                        error.code =
+                            "INVENTORY_NOT_FOUND";
+
+
+                        throw error;
 
                     }
 
+
+                    // =============================================
+                    // AVAILABLE STOCK
+                    // =============================================
 
                     const available =
                         Number(
@@ -224,33 +501,60 @@ export const createOrder = (req, res) => {
                         );
 
 
-                    // =====================================
-                    // CHECK STOCK
-                    // =====================================
+                    if (
+
+                        !Number.isInteger(
+                            available
+                        ) ||
+
+                        available < 0
+
+                    ) {
+
+                        const error =
+                            new Error(
+                                `Invalid inventory quantity for ${product.name}.`
+                            );
+
+
+                        error.code =
+                            "INVALID_INVENTORY";
+
+
+                        throw error;
+
+                    }
+
+
+                    // =============================================
+                    // STOCK CHECK
+                    // =============================================
 
                     if (
                         available <
                         requested.quantity
                     ) {
 
-                        throw new Error(
+                        const error =
+                            new Error(
 
-                            `Only ${available} unit(s) of ${product.name} are currently available. You requested ${requested.quantity}.`
+                                `Only ${available} unit(s) of ${product.name} are currently available. You requested ${requested.quantity}.`
 
-                        );
+                            );
+
+
+                        error.code =
+                            "INSUFFICIENT_STOCK";
+
+
+                        throw error;
 
                     }
 
 
-                    // =====================================
-                    // CALCULATE PRICE FROM DATABASE
-                    // =====================================
-                    //
-                    // IMPORTANT:
-                    // We do NOT trust the price sent
-                    // from the customer's browser.
-                    //
-                    // =====================================
+                    // =============================================
+                    // DATABASE PRICE
+                    // =============================================
 
                     const price =
                         Number(
@@ -258,75 +562,129 @@ export const createOrder = (req, res) => {
                         );
 
 
+                    if (
+
+                        !Number.isFinite(
+                            price
+                        ) ||
+
+                        price <= 0
+
+                    ) {
+
+                        const error =
+                            new Error(
+                                `Invalid price configured for ${product.name}.`
+                            );
+
+
+                        error.code =
+                            "INVALID_PRICE";
+
+
+                        throw error;
+
+                    }
+
+
+                    // =============================================
+                    // CALCULATE ITEM TOTAL
+                    // =============================================
+
                     const itemTotal =
                         price *
                         requested.quantity;
+
+
+                    if (
+                        !Number.isFinite(
+                            itemTotal
+                        )
+                    ) {
+
+                        const error =
+                            new Error(
+                                `Unable to calculate price for ${product.name}.`
+                            );
+
+
+                        error.code =
+                            "PRICE_CALCULATION_ERROR";
+
+
+                        throw error;
+
+                    }
 
 
                     totalAmount +=
                         itemTotal;
 
 
-                    // =====================================
+                    // =============================================
                     // RESERVE STOCK
-                    // =====================================
+                    // =============================================
 
-                    db.prepare(`
-                        UPDATE inventory
+                    const inventoryUpdate =
+                        db.prepare(`
+                            UPDATE inventory
 
-                        SET
-                            quantity_available =
-                                quantity_available - ?,
+                            SET
 
-                            reserved_quantity =
-                                reserved_quantity + ?,
+                                quantity_available =
+                                    quantity_available - ?,
 
-                            updated_at =
-                                CURRENT_TIMESTAMP
+                                reserved_quantity =
+                                    reserved_quantity + ?,
 
-                        WHERE product_id = ?
-                    `).run(
+                                updated_at =
+                                    CURRENT_TIMESTAMP
 
-                        requested.quantity,
+                            WHERE
 
-                        requested.quantity,
+                                product_id = ?
 
-                        requested.productId
+                                AND
 
-                    );
+                                quantity_available >= ?
 
+                        `).run(
 
-                    // =====================================
-                    // RECORD RESERVATION
-                    // =====================================
+                            requested.quantity,
 
-                    db.prepare(`
-                        INSERT INTO inventory_movements (
-                            product_id,
-                            movement_type,
-                            quantity,
-                            reference_id,
-                            note
-                        )
-                        VALUES (?, ?, ?, ?, ?)
-                    `).run(
+                            requested.quantity,
 
-                        requested.productId,
+                            requested.productId,
 
-                        "reservation",
+                            requested.quantity
 
-                        requested.quantity,
-
-                        null,
-
-                        `Reserved ${requested.quantity} unit(s) for pending order`
-
-                    );
+                        );
 
 
-                    // =====================================
-                    // SAVE CLEAN ORDER ITEM
-                    // =====================================
+                    if (
+                        inventoryUpdate.changes !== 1
+                    ) {
+
+                        const error =
+                            new Error(
+
+                                `Unable to reserve stock for ${product.name}. Please try again.`
+
+                            );
+
+
+                        error.code =
+                            "RESERVATION_FAILED";
+
+
+                        throw error;
+
+                    }
+
+
+                    // =============================================
+                    // SAVE FINAL ITEM
+                    // =============================================
 
                     finalItems.push({
 
@@ -349,52 +707,111 @@ export const createOrder = (req, res) => {
                 }
 
 
-                // =========================================
+                // =================================================
+                // VALIDATE TOTAL
+                // =================================================
+
+                if (
+
+                    !Number.isFinite(
+                        totalAmount
+                    ) ||
+
+                    totalAmount <= 0
+
+                ) {
+
+                    const error =
+                        new Error(
+                            "Unable to calculate a valid order total."
+                        );
+
+
+                    error.code =
+                        "INVALID_ORDER_TOTAL";
+
+
+                    throw error;
+
+                }
+
+
+                // =================================================
                 // CREATE ORDER
-                // =========================================
+                // =================================================
 
-                const statement =
-                    db.prepare(`
-                        INSERT INTO orders (
-                            customer_name,
-                            customer_phone,
-                            customer_email,
-                            delivery_address,
-                            items,
-                            total_amount
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `);
+                const deliveryFee = deliveryQuote.fee;
 
+                totalAmount += deliveryFee;
 
                 const result =
-                    statement.run(
+                    db.prepare(`
+                        INSERT INTO orders (
 
-                        customerName,
+                            customer_id,
 
-                        customerPhone,
+                            customer_name,
 
-                        customerEmail,
+                            customer_phone,
 
-                        deliveryAddress,
+                            customer_email,
+
+                            delivery_address,
+
+                            items,
+
+                            total_amount,
+
+                            payment_status,
+
+                            order_status
+                            ,fulfillment_type
+                            ,delivery_fee
+                            ,delivery_distance_meters
+
+                        )
+
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+                    `).run(
+
+                        customer.id,
+
+                        customer.name,
+
+                        customer.phone,
+
+                        customer.email,
+
+                        cleanDeliveryAddress,
 
                         JSON.stringify(
                             finalItems
                         ),
 
-                        totalAmount
+                        totalAmount,
+
+                        "pending",
+
+                        "pending"
+
+                        ,cleanFulfillmentType
+
+                        ,deliveryFee
+                        ,deliveryQuote.distanceMeters
 
                     );
 
 
-                // =========================================
-                // CONNECT RESERVATIONS TO ORDER
-                // =========================================
-                //
-                // We now know the order ID, so update the
-                // reservation movement records.
-                //
-                // =========================================
+                const orderId =
+                    Number(
+                        result.lastInsertRowid
+                    );
+
+
+                // =================================================
+                // RECORD RESERVATION MOVEMENTS
+                // =================================================
 
                 for (
                     const item
@@ -402,24 +819,37 @@ export const createOrder = (req, res) => {
                 ) {
 
                     db.prepare(`
-                        UPDATE inventory_movements
+                        INSERT INTO inventory_movements (
 
-                        SET reference_id = ?
+                            product_id,
 
-                        WHERE id = (
-                            SELECT id
-                            FROM inventory_movements
-                            WHERE product_id = ?
-                              AND movement_type = 'reservation'
-                              AND reference_id IS NULL
-                            ORDER BY id DESC
-                            LIMIT 1
+                            movement_type,
+
+                            quantity,
+
+                            reference_id,
+
+                            note,
+
+                            performed_by
+
                         )
+
+                        VALUES (?, ?, ?, ?, ?, ?)
+
                     `).run(
 
-                        result.lastInsertRowid,
+                        item.productId,
 
-                        item.productId
+                        "reservation",
+
+                        item.quantity,
+
+                        orderId,
+
+                        `Reserved ${item.quantity} unit(s) for Order #${orderId}`,
+
+                        `CUSTOMER:${customer.id}`
 
                     );
 
@@ -428,11 +858,7 @@ export const createOrder = (req, res) => {
 
                 return {
 
-                    orderId:
-                        result.lastInsertRowid,
-
-                    items:
-                        finalItems,
+                    orderId,
 
                     total:
                         totalAmount
@@ -446,61 +872,48 @@ export const createOrder = (req, res) => {
         // EXECUTE TRANSACTION
         // =================================================
 
-        const orderData =
+        const created =
             transaction();
 
 
         // =================================================
-        // GET NEW ORDER
+        // GET CREATED ORDER
         // =================================================
 
         const order =
-            db.prepare(`
-                SELECT
-                    id,
-                    customer_name AS customerName,
-                    customer_phone AS customerPhone,
-                    customer_email AS customerEmail,
-                    delivery_address AS deliveryAddress,
-                    items,
-                    total_amount AS total,
-                    payment_status AS paymentStatus,
-                    order_status AS orderStatus,
-                    payment_reference AS paymentReference,
-                    created_at AS createdAt,
-                    updated_at AS updatedAt
-                FROM orders
-                WHERE id = ?
-            `).get(
-                orderData.orderId
+            getCustomerOrder(
+
+                created.orderId,
+
+                customer.id
+
             );
 
 
-        // Convert items JSON back to array
+        if (!order) {
 
-        if (order) {
+            return res.status(500).json({
 
-            try {
+                success: false,
 
-                order.items =
-                    JSON.parse(
-                        order.items
-                    );
+                message:
+                    "Order was created but could not be loaded."
 
-            } catch {
-
-                order.items = [];
-
-            }
+            });
 
         }
+
+
+        parseOrderItems(
+            order
+        );
 
 
         // =================================================
         // SUCCESS
         // =================================================
 
-        res.status(201).json({
+        return res.status(201).json({
 
             success: true,
 
@@ -520,22 +933,30 @@ export const createOrder = (req, res) => {
         );
 
 
-        // ================================================
-        // STOCK ERROR
-        // ================================================
+        const clientErrorCodes = [
+
+            "PRODUCT_NOT_FOUND",
+
+            "INVENTORY_NOT_FOUND",
+
+            "INVALID_INVENTORY",
+
+            "INSUFFICIENT_STOCK",
+
+            "INVALID_PRICE",
+
+            "PRICE_CALCULATION_ERROR",
+
+            "RESERVATION_FAILED",
+
+            "INVALID_ORDER_TOTAL"
+
+        ];
+
 
         if (
-            error.message &&
-            (
-                error.message.includes(
-                    "currently available"
-                ) ||
-                error.message.includes(
-                    "inventory record"
-                ) ||
-                error.message.includes(
-                    "Product #"
-                )
+            clientErrorCodes.includes(
+                error.code
             )
         ) {
 
@@ -551,11 +972,7 @@ export const createOrder = (req, res) => {
         }
 
 
-        // ================================================
-        // GENERAL ERROR
-        // ================================================
-
-        res.status(500).json({
+        return res.status(500).json({
 
             success: false,
 
@@ -572,20 +989,49 @@ export const createOrder = (req, res) => {
 };
 
 
-
 // =====================================================
-// GET ALL ORDERS
-// GET /api/orders
+// GET MY ORDERS
+// GET /api/orders/my
 // =====================================================
 
-export const getOrders = (req, res) => {
+export const getMyOrders = (req, res) => {
 
     try {
+
+        // =================================================
+        // AUTHENTICATED CUSTOMER
+        // =================================================
+
+        const customer =
+            getAuthenticatedCustomer(req);
+
+
+        if (!customer) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                message:
+                    "Authentication required. Please login."
+
+            });
+
+        }
+
+
+        // =================================================
+        // GET CUSTOMER ORDERS
+        // =================================================
 
         const orders =
             db.prepare(`
                 SELECT
+
                     id,
+
+                    customer_id
+                        AS customerId,
 
                     customer_name
                         AS customerName,
@@ -598,6 +1044,136 @@ export const getOrders = (req, res) => {
 
                     delivery_address
                         AS deliveryAddress,
+
+                    fulfillment_type
+                        AS fulfillmentType,
+
+                    delivery_fee
+                        AS deliveryFee,
+
+                    items,
+
+                    total_amount
+                        AS total,
+
+                    payment_status
+                        AS paymentStatus,
+
+                    order_status
+                        AS orderStatus,
+
+                    payment_reference
+                        AS paymentReference,
+
+                    created_at
+                        AS createdAt,
+
+                    updated_at
+                        AS updatedAt
+
+                FROM orders
+
+                WHERE customer_id = ?
+
+                ORDER BY
+                    id DESC
+
+            `).all(
+                customer.id
+            );
+
+
+        orders.forEach(
+            order => {
+
+                parseOrderItems(
+                    order
+                );
+
+            }
+        );
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            orders
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Get My Orders Error:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to load your orders.",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
+
+// =====================================================
+// GET ALL ORDERS
+// GET /api/orders
+// =====================================================
+//
+// IMPORTANT:
+//
+// This endpoint should eventually be removed from
+// the public customer route and used only by admin.
+//
+// Your admin dashboard already has:
+//
+// GET /api/admin/orders
+//
+// =====================================================
+
+export const getOrders = (req, res) => {
+
+    try {
+
+        const orders =
+            db.prepare(`
+                SELECT
+
+                    id,
+
+                    customer_id
+                        AS customerId,
+
+                    customer_name
+                        AS customerName,
+
+                    customer_phone
+                        AS customerPhone,
+
+                    customer_email
+                        AS customerEmail,
+
+                    delivery_address
+                        AS deliveryAddress,
+
+                    fulfillment_type
+                        AS fulfillmentType,
+
+                    delivery_fee
+                        AS deliveryFee,
 
                     items,
 
@@ -623,33 +1199,22 @@ export const getOrders = (req, res) => {
 
                 ORDER BY
                     created_at DESC
-            `)
-            .all();
 
+            `).all();
 
-        // Convert items JSON into arrays
 
         orders.forEach(
             order => {
 
-                try {
-
-                    order.items =
-                        JSON.parse(
-                            order.items
-                        );
-
-                } catch {
-
-                    order.items = [];
-
-                }
+                parseOrderItems(
+                    order
+                );
 
             }
         );
 
 
-        res.status(200).json({
+        return res.status(200).json({
 
             success: true,
 
@@ -661,17 +1226,439 @@ export const getOrders = (req, res) => {
     } catch (error) {
 
         console.error(
-            "Get Orders Error:",
+            "❌ Get Orders Error:",
             error
         );
 
 
-        res.status(500).json({
+        return res.status(500).json({
 
             success: false,
 
             message:
                 "Failed to get orders.",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
+
+// =====================================================
+// GET SINGLE CUSTOMER ORDER
+// GET /api/orders/:id
+// =====================================================
+
+export const getOrderById = (req, res) => {
+
+    try {
+
+        const orderId =
+            Number(
+                req.params.id
+            );
+
+
+        if (
+
+            !Number.isInteger(
+                orderId
+            ) ||
+
+            orderId <= 0
+
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Please provide a valid order number."
+
+            });
+
+        }
+
+
+        const customer =
+            getAuthenticatedCustomer(req);
+
+
+        if (!customer) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                message:
+                    "Authentication required. Please login."
+
+            });
+
+        }
+
+
+        const order =
+            getCustomerOrder(
+
+                orderId,
+
+                customer.id
+
+            );
+
+
+        if (!order) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "Order not found."
+
+            });
+
+        }
+
+
+        parseOrderItems(
+            order
+        );
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            order
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Get Order By ID Error:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to get order.",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
+
+// =====================================================
+// TRACK ORDER
+// GET /api/orders/:id/track?phone=...
+// =====================================================
+//
+// Legacy endpoint retained for compatibility.
+//
+// =====================================================
+
+export const trackOrder = (req, res) => {
+
+    try {
+
+        const orderId =
+            Number(
+                req.params.id
+            );
+
+
+        const phone =
+            req.query.phone;
+
+
+        // =================================================
+        // VALIDATE ORDER ID
+        // =================================================
+
+        if (
+
+            !Number.isInteger(
+                orderId
+            ) ||
+
+            orderId <= 0
+
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Please provide a valid order number."
+
+            });
+
+        }
+
+
+        // =================================================
+        // VALIDATE PHONE
+        // =================================================
+
+        if (
+            !phone ||
+            String(phone).trim() === ""
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Phone number is required."
+
+            });
+
+        }
+
+
+        // =================================================
+        // NORMALIZE PHONE
+        // =================================================
+
+        const normalizePhone =
+            value => {
+
+                let normalized =
+                    String(value)
+                        .trim()
+                        .replace(
+                            /[\s\-()]/g,
+                            ""
+                        );
+
+
+                if (
+                    normalized.startsWith(
+                        "+234"
+                    )
+                ) {
+
+                    normalized =
+                        "0" +
+                        normalized.slice(4);
+
+                }
+
+                else if (
+                    normalized.startsWith(
+                        "234"
+                    )
+                ) {
+
+                    normalized =
+                        "0" +
+                        normalized.slice(3);
+
+                }
+
+
+                return normalized;
+
+            };
+
+
+        const suppliedPhone =
+            normalizePhone(
+                phone
+            );
+
+
+        // =================================================
+        // NIGERIAN PHONE VALIDATION
+        // =================================================
+
+        if (
+            !/^0\d{10}$/.test(
+                suppliedPhone
+            )
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Please enter a valid Nigerian phone number."
+
+            });
+
+        }
+
+
+        // =================================================
+        // GET ORDER
+        // =================================================
+
+        const order =
+            db.prepare(`
+                SELECT
+
+                    id,
+
+                    customer_id
+                        AS customerId,
+
+                    customer_name
+                        AS customerName,
+
+                    customer_phone
+                        AS customerPhone,
+
+                    customer_email
+                        AS customerEmail,
+
+                    delivery_address
+                        AS deliveryAddress,
+
+                    fulfillment_type
+                        AS fulfillmentType,
+
+                    delivery_fee
+                        AS deliveryFee,
+
+                    items,
+
+                    total_amount
+                        AS total,
+
+                    payment_status
+                        AS paymentStatus,
+
+                    order_status
+                        AS orderStatus,
+
+                    payment_reference
+                        AS paymentReference,
+
+                    created_at
+                        AS createdAt,
+
+                    updated_at
+                        AS updatedAt
+
+                FROM orders
+
+                WHERE id = ?
+
+            `).get(
+                orderId
+            );
+
+
+        if (!order) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "Order not found. Please check your order number and phone number."
+
+            });
+
+        }
+
+
+        // =================================================
+        // VERIFY PHONE
+        // =================================================
+
+        const storedPhone =
+            normalizePhone(
+                order.customerPhone
+            );
+
+
+        if (
+            storedPhone !==
+            suppliedPhone
+        ) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "Order not found. Please check your order number and phone number."
+
+            });
+
+        }
+
+
+        // =================================================
+        // PARSE ITEMS
+        // =================================================
+
+        parseOrderItems(
+            order
+        );
+
+
+        // =================================================
+        // REMOVE PRIVATE INFORMATION
+        // =================================================
+
+        delete order.customerPhone;
+
+        delete order.customerEmail;
+
+
+        // =================================================
+        // SUCCESS
+        // =================================================
+
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "Order found successfully.",
+
+            order
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Track Order Error:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Unable to track order right now.",
 
             error:
                 error.message

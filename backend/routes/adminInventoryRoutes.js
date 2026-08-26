@@ -6,11 +6,15 @@ import {
     adjustInventory,
     getInventoryHistory
 } from "../controllers/adminInventoryController.js";
+import { exportInventoryExcel, exportInventoryPdf } from "../controllers/inventoryReportController.js";
 
 import { adminAuth } from "../middleware/adminAuth.js";
 
 
 const router = express.Router();
+
+router.get("/reports/excel", adminAuth, exportInventoryExcel);
+router.get("/reports/pdf", adminAuth, exportInventoryPdf);
 
 
 // =====================================================

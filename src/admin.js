@@ -15,7 +15,8 @@ import {
 
 import {
     AdminProducts,
-    setupAdminProducts
+    setupAdminProducts,
+    loadAdminProducts
 } from "./components/AdminProducts.js";
 
 import {
@@ -23,6 +24,10 @@ import {
     loginAdmin,
     isAdminLoggedIn
 } from "./components/AdminLogin.js";
+import { AdminStaff, setupAdminStaff } from "./components/AdminStaff.js";
+import { AdminRiders, setupAdminRiders } from "./components/AdminRiders.js";
+import { AdminWithdrawals, setupAdminWithdrawals } from "./components/AdminWithdrawals.js";
+import { AdminOperations, setupAdminOperations } from "./components/AdminOperations.js";
 
 
 // =====================================================
@@ -31,7 +36,7 @@ import {
 
 const API = axios.create({
 
-    baseURL: "http://localhost:5000/api"
+    baseURL: __API_URL__
 
 });
 
@@ -351,13 +356,61 @@ async function verifyAdminToken() {
 function showAdminDashboard() {
 
     app.innerHTML = `
-
-        ${AdminDashboard()}
-
-        ${AdminProducts()}
+        <div class="admin-workspace">
+            <nav class="admin-taskbar" aria-label="Admin tasks">
+                <div class="admin-taskbar__brand"><span>NutriDust</span><small>Operations</small></div>
+                <div class="admin-taskbar__items" role="tablist">
+                    <button class="admin-task active" data-admin-target="orders" role="tab"><i class="bi bi-receipt"></i><span>Orders</span></button>
+                    <button class="admin-task" data-admin-target="operations" role="tab"><i class="bi bi-speedometer2"></i><span>Overview</span></button>
+                    <button class="admin-task" data-admin-target="products" role="tab"><i class="bi bi-box-seam"></i><span>Products &amp; Stock</span></button>
+                    <button class="admin-task" data-admin-target="riders" role="tab"><i class="bi bi-bicycle"></i><span>Riders</span></button>
+                    <button class="admin-task" data-admin-target="withdrawals" role="tab"><i class="bi bi-wallet2"></i><span>Withdrawals</span></button>
+                    <button class="admin-task" data-admin-target="staff" role="tab"><i class="bi bi-people"></i><span>Staff</span></button>
+                </div>
+            </nav>
+            <main class="admin-view-stack">
+                <div class="admin-view" data-admin-view="orders">${AdminDashboard()}</div>
+                <div class="admin-view" data-admin-view="operations" hidden>${AdminOperations()}</div>
+                <div class="admin-view" data-admin-view="products" hidden>${AdminProducts()}</div>
+                <div class="admin-view" data-admin-view="riders" hidden>${AdminRiders()}</div>
+                <div class="admin-view" data-admin-view="withdrawals" hidden>${AdminWithdrawals()}</div>
+                <div class="admin-view" data-admin-view="staff" hidden>${AdminStaff()}</div>
+            </main>
+        </div>
 
     `;
 
+    setupAdminWorkspaceNavigation();
+
+}
+
+function setupAdminWorkspaceNavigation() {
+    const buttons=[...document.querySelectorAll("[data-admin-target]")],views=[...document.querySelectorAll("[data-admin-view]")];
+    const valid=new Set(views.map(view=>view.dataset.adminView));
+    const show=name=>{
+        const selected=valid.has(name)?name:"orders";
+        views.forEach(view=>view.hidden=view.dataset.adminView!==selected);
+        buttons.forEach(button=>{const active=button.dataset.adminTarget===selected;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));});
+        if(location.hash!==`#${selected}`) history.replaceState(null,"",`#${selected}`);
+        window.scrollTo({top:0,behavior:"smooth"});
+    };
+    buttons.forEach(button=>button.addEventListener("click",()=>show(button.dataset.adminTarget)));
+    window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+    show(location.hash.slice(1)||"orders");
+}
+
+function startSilentAdminRefresh() {
+    let refreshing=false;
+    setInterval(async()=>{
+        if(document.hidden||refreshing||!isAdminLoggedIn())return;
+        refreshing=true;
+        try{
+            const view=document.querySelector("[data-admin-view]:not([hidden])")?.dataset.adminView||"orders";
+            if(view==="orders")await loadAdminOrders();
+            else if(view==="products")await loadAdminProducts();
+            else window.dispatchEvent(new CustomEvent("nutridust:admin-refresh",{detail:{view}}));
+        }catch{}finally{refreshing=false;}
+    },3000);
 }
 
 
@@ -419,6 +472,7 @@ async function initAdmin() {
     // -------------------------------------------------
 
     showAdminDashboard();
+    startSilentAdminRefresh();
 
 
     // -------------------------------------------------
@@ -433,6 +487,7 @@ async function initAdmin() {
     // -------------------------------------------------
 
     await loadAdminOrders();
+    await setupAdminOperations();
 
 
     // -------------------------------------------------
@@ -454,6 +509,9 @@ async function initAdmin() {
     // -------------------------------------------------
 
     setupAdminProducts();
+    await setupAdminStaff();
+    await setupAdminRiders();
+    await setupAdminWithdrawals();
 
 
     console.log(

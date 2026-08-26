@@ -31,6 +31,12 @@ export function Cart() {
 
     <div class="offcanvas-body">
 
+        <div class="d-flex justify-content-end mb-3">
+            <button id="clearCartButton" type="button" class="btn btn-sm btn-outline-danger d-none">
+                <i class="bi bi-trash3 me-1"></i> Clear cart
+            </button>
+        </div>
+
         <div id="cartItems">
 
             <div class="text-center py-5">

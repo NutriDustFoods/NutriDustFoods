@@ -10,6 +10,11 @@ import adminOrderRoutes from "./routes/adminOrderRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import adminProductRoutes from "./routes/adminProductRoutes.js";
 import adminInventoryRoutes from "./routes/adminInventoryRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import riderRoutes from "./routes/riderRoutes.js";
+import adminRiderRoutes from "./routes/adminRiderRoutes.js";
+import adminStaffRoutes from "./routes/adminStaffRoutes.js";
+
 // =====================================================
 // ES MODULE PATH SETUP
 // =====================================================
@@ -32,18 +37,27 @@ const app = express();
 // CORS
 // =====================================================
 
-app.use(
-    cors()
-);
+app.use(cors({
+    origin: process.env.FRONTEND_URL
+        ? process.env.FRONTEND_URL.split(",").map(value => value.trim())
+        : ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "https://localhost", "capacitor://localhost"],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 
 // =====================================================
 // JSON BODY PARSER
 // =====================================================
 
-app.use(
-    express.json()
-);
+app.use(express.json({ limit: "250kb" }));
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+});
 
 
 // =====================================================
@@ -166,6 +180,21 @@ app.use(
     "/api/payments",
     paymentRoutes
 );
+
+
+// =====================================================
+// CUSTOMER AUTH ROUTES
+// =====================================================
+
+app.use(
+    "/api/auth",
+    authRoutes
+);
+
+app.use("/api/rider", riderRoutes);
+app.use("/api/admin/riders", adminRiderRoutes);
+app.use("/api/admin/staff", adminStaffRoutes);
+
 
 
 // =====================================================

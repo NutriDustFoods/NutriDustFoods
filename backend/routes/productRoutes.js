@@ -2,32 +2,34 @@ import express from "express";
 
 import {
     getProducts,
-    getProductById,
-    createProduct,
-    deleteAllProducts
+    getProductById
 } from "../controllers/productController.js";
 
-const router = express.Router();
+
+const router =
+    express.Router();
 
 
+// =====================================================
+// GET ALL PRODUCTS
 // GET /api/products
-// Get all products
-router.get("/", getProducts);
+// =====================================================
+
+router.get(
+    "/",
+    getProducts
+);
 
 
+// =====================================================
+// GET SINGLE PRODUCT
 // GET /api/products/:id
-// Get one product
-router.get("/:id", getProductById);
+// =====================================================
 
-
-// POST /api/products
-// Create a new product
-router.post("/", createProduct);
-
-
-// DELETE /api/products
-// Delete all products
-router.delete("/", deleteAllProducts);
+router.get(
+    "/:id",
+    getProductById
+);
 
 
 export default router;

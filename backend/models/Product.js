@@ -1,5 +1,6 @@
 import db from "../config/sqlite.js";
 
+
 const Product = {
 
     // =====================================================
@@ -12,18 +13,30 @@ const Product = {
             .prepare(`
                 SELECT
                     products.id,
+
                     products.name,
+
                     products.category,
+
                     products.description,
+
                     products.image,
+
                     products.price,
+
                     products.rating,
+
                     products.badge,
 
-                    (
-                    COALESCE(inventory.total_produced, 0) -
-                    COALESCE(inventory.total_sold, 0)
+                    COALESCE(
+                        inventory.quantity_available,
+                        0
                     ) AS quantityAvailable,
+
+                    COALESCE(
+                        inventory.reserved_quantity,
+                        0
+                    ) AS reservedQuantity,
 
                     COALESCE(
                         inventory.total_produced,
@@ -40,15 +53,20 @@ const Product = {
                         10
                     ) AS lowStockThreshold,
 
-                    products.created_at AS createdAt,
-                    products.updated_at AS updatedAt
+                    products.created_at
+                        AS createdAt,
+
+                    products.updated_at
+                        AS updatedAt
 
                 FROM products
 
                 LEFT JOIN inventory
-                    ON inventory.product_id = products.id
+                    ON inventory.product_id =
+                       products.id
 
-                ORDER BY products.id ASC
+                ORDER BY
+                    products.id ASC
             `)
             .all();
 
@@ -65,18 +83,30 @@ const Product = {
             .prepare(`
                 SELECT
                     products.id,
+
                     products.name,
+
                     products.category,
+
                     products.description,
+
                     products.image,
+
                     products.price,
+
                     products.rating,
+
                     products.badge,
 
                     COALESCE(
                         inventory.quantity_available,
                         0
                     ) AS quantityAvailable,
+
+                    COALESCE(
+                        inventory.reserved_quantity,
+                        0
+                    ) AS reservedQuantity,
 
                     COALESCE(
                         inventory.total_produced,
@@ -93,13 +123,17 @@ const Product = {
                         10
                     ) AS lowStockThreshold,
 
-                    products.created_at AS createdAt,
-                    products.updated_at AS updatedAt
+                    products.created_at
+                        AS createdAt,
+
+                    products.updated_at
+                        AS updatedAt
 
                 FROM products
 
                 LEFT JOIN inventory
-                    ON inventory.product_id = products.id
+                    ON inventory.product_id =
+                       products.id
 
                 WHERE products.id = ?
             `)
@@ -114,53 +148,82 @@ const Product = {
 
     create(product) {
 
-        const statement =
-            db.prepare(`
-                INSERT INTO products (
-                    name,
-                    category,
-                    description,
-                    image,
-                    price,
-                    rating,
-                    badge
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `);
+        const transaction =
+            db.transaction(() => {
+
+                // =========================================
+                // CREATE PRODUCT
+                // =========================================
+
+                const result =
+                    db.prepare(`
+                        INSERT INTO products (
+                            name,
+                            category,
+                            description,
+                            image,
+                            price,
+                            rating,
+                            badge
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+
+                        product.name,
+
+                        product.category,
+
+                        product.description,
+
+                        product.image,
+
+                        Number(
+                            product.price
+                        ),
+
+                        product.rating ??
+                            5,
+
+                        product.badge ??
+                            "NEW"
+
+                    );
 
 
-        const result =
-            statement.run(
-
-                product.name,
-                product.category,
-                product.description,
-                product.image,
-                product.price,
-                product.rating ?? 5,
-                product.badge ?? "NEW"
-
-            );
+                const productId =
+                    result.lastInsertRowid;
 
 
-        // Create inventory record for new product
+                // =========================================
+                // CREATE INVENTORY
+                // =========================================
 
-        db.prepare(`
-            INSERT OR IGNORE INTO inventory (
-                product_id,
-                total_produced,
-                total_sold,
-                quantity_available,
-                low_stock_threshold
-            )
-            VALUES (?, 0, 0, 0, 10)
-        `).run(
-            result.lastInsertRowid
-        );
+                db.prepare(`
+                    INSERT INTO inventory (
+                        product_id,
+                        total_produced,
+                        total_sold,
+                        quantity_available,
+                        reserved_quantity,
+                        low_stock_threshold
+                    )
+                    VALUES (?, 0, 0, 0, 0, 10)
+                `).run(
+                    productId
+                );
+
+
+                return productId;
+
+            });
+
+
+        const productId =
+            transaction();
 
 
         return this.getById(
-            result.lastInsertRowid
+            productId
         );
 
     },
@@ -172,45 +235,73 @@ const Product = {
 
     update(id, product) {
 
-        const statement =
-            db.prepare(`
-                UPDATE products
-
-                SET
-                    name = ?,
-                    category = ?,
-                    description = ?,
-                    image = ?,
-                    price = ?,
-                    rating = ?,
-                    badge = ?,
-                    updated_at = CURRENT_TIMESTAMP
-
-                WHERE id = ?
-            `);
+        const existing =
+            this.getById(id);
 
 
-        statement.run(
+        if (!existing) {
+
+            return null;
+
+        }
+
+
+        db.prepare(`
+            UPDATE products
+
+            SET
+                name = ?,
+
+                category = ?,
+
+                description = ?,
+
+                image = ?,
+
+                price = ?,
+
+                rating = ?,
+
+                badge = ?,
+
+                updated_at =
+                    CURRENT_TIMESTAMP
+
+            WHERE id = ?
+        `).run(
 
             product.name,
+
             product.category,
+
             product.description,
+
             product.image,
-            product.price,
-            product.rating ?? 5,
-            product.badge ?? "NEW",
+
+            Number(
+                product.price
+            ),
+
+            product.rating ??
+                5,
+
+            product.badge ??
+                "NEW",
+
             id
 
         );
 
 
-        return this.getById(id);
+        return this.getById(
+            id
+        );
 
     },
 
 
     // =====================================================
-    // DELETE PRODUCT
+    // DELETE PRODUCT BY ID
     // =====================================================
 
     deleteById(id) {
@@ -240,5 +331,6 @@ const Product = {
     }
 
 };
+
 
 export default Product;

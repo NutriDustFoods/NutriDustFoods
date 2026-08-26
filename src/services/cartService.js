@@ -307,3 +307,14 @@ export function clearCart() {
     saveCart();
 
 }
+
+// Remove one product line regardless of its selected quantity.
+export function removeFromCart(id) {
+    const originalLength = cart.length;
+    cart = cart.filter(product => (product._id || product.id) != id);
+    saveCart();
+    return {
+        success: cart.length < originalLength,
+        cart
+    };
+}

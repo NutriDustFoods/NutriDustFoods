@@ -16,7 +16,7 @@ import {
 
 const API = axios.create({
 
-    baseURL: "http://localhost:5000/api"
+    baseURL: __API_URL__
 
 });
 
@@ -309,8 +309,8 @@ export function AdminDashboard() {
                                     Processing
                                 </option>
 
-                                <option value="shipped">
-                                    Shipped
+                                <option value="out_for_delivery">
+                                    On Delivery
                                 </option>
 
                                 <option value="delivered">
@@ -889,7 +889,10 @@ function statusBadge(
         processing:
             "bg-primary",
 
-        shipped:
+        ready_for_pickup:
+            "bg-info text-dark",
+
+        out_for_delivery:
             "bg-info text-dark",
 
         delivered:
@@ -909,8 +912,11 @@ function statusBadge(
         processing:
             "Processing",
 
-        shipped:
-            "Shipped",
+        ready_for_pickup:
+            "Ready for Pickup",
+
+        out_for_delivery:
+            "On Delivery",
 
         delivered:
             "Delivered",
@@ -1112,13 +1118,15 @@ async function showOrder(
                 <div class="col-md-6">
 
                     <h6 class="fw-bold">
-                        Delivery Address
+                        ${order.fulfillmentType === "pickup" ? "Customer Pickup" : "Delivery Address"}
                     </h6>
 
                     <div class="bg-light rounded p-3">
 
                         ${escapeHtml(
-                            order.deliveryAddress
+                            order.fulfillmentType === "pickup"
+                                ? "Customer will collect this order. Delivery charge: ₦0."
+                                : order.deliveryAddress
                         )}
 
                     </div>
@@ -1262,34 +1270,7 @@ async function showOrder(
                         Order Status
                     </h6>
 
-                    <div class="bg-light rounded p-3">
-
-                        <select
-                            id="adminOrderStatus"
-                            class="form-select"
-                        >
-
-                            ${statusOptions(
-                                order.orderStatus
-                            )}
-
-                        </select>
-
-
-                        <button
-                            type="button"
-                            id="updateOrderStatusButton"
-                            data-order-id="${escapeHtml(order.id)}"
-                            class="btn btn-dark w-100 mt-3"
-                        >
-
-                            <i class="bi bi-check2-circle me-2"></i>
-
-                            Update Status
-
-                        </button>
-
-                    </div>
+                    <div class="bg-light rounded p-3">${statusControl(order)}</div>
 
                 </div>
 
@@ -1372,50 +1353,21 @@ async function showOrder(
 // STATUS OPTIONS
 // =====================================================
 
-function statusOptions(
-    current
-) {
+function nextAdminStatuses(order) {
+    const current = order.orderStatus;
+    if (["delivered", "cancelled"].includes(current)) return [];
+    if (order.fulfillmentType === "pickup") return ({ pending:["processing","cancelled"], processing:["ready_for_pickup","cancelled"], ready_for_pickup:["delivered","cancelled"] })[current] || [];
+    return ({ pending:["processing","cancelled"], processing:["cancelled"] })[current] || [];
+}
 
-    const statuses = [
+function commandLabel(status, pickup) {
+    return ({ processing:"Start Preparing", ready_for_pickup:"Mark Ready for Pickup", delivered:pickup?"Mark as Collected":"Delivered", cancelled:"Cancel Order" })[status];
+}
 
-        "pending",
-
-        "processing",
-
-        "shipped",
-
-        "delivered",
-
-        "cancelled"
-
-    ];
-
-
-    return statuses
-        .map(
-            status => `
-
-                <option
-                    value="${status}"
-                    ${
-                        current === status
-                            ? "selected"
-                            : ""
-                    }
-                >
-
-                    ${
-                        status.charAt(0)
-                            .toUpperCase() +
-                        status.slice(1)
-                    }
-
-                </option>
-
-            `
-        )
-        .join("");
-
+function statusControl(order) {
+    const statuses = nextAdminStatuses(order);
+    if (!statuses.length) return `<span class="badge text-bg-secondary">No further admin action</span><p class="small text-secondary mb-0 mt-2">${order.fulfillmentType === "delivery" && !["delivered","cancelled"].includes(order.orderStatus)?"Delivery progress is controlled by the assigned rider.":"This order is complete and locked."}</p>`;
+    return `<label for="adminOrderStatus" class="form-label small fw-semibold">Available action</label><select id="adminOrderStatus" class="form-select">${statuses.map(status=>`<option value="${status}">${commandLabel(status,order.fulfillmentType==="pickup")}</option>`).join("")}</select><button type="button" id="updateOrderStatusButton" data-order-id="${escapeHtml(order.id)}" class="btn btn-dark w-100 mt-3"><i class="bi bi-check2-circle me-2"></i>Apply Action</button>`;
 }
 
 

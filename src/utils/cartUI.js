@@ -2,7 +2,9 @@ import {
     getCart,
     getCartCount,
     increaseQuantity,
-    decreaseQuantity
+    decreaseQuantity,
+    removeFromCart,
+    clearCart
 } from "../services/cartService.js";
 
 
@@ -22,6 +24,9 @@ export function renderCart() {
 
     const cartCount =
         document.getElementById("cartCount");
+
+    const clearCartButton = document.getElementById("clearCartButton");
+    const checkoutButton = document.getElementById("checkoutButton");
 
 
     // =================================================
@@ -51,6 +56,9 @@ export function renderCart() {
 
     if (cart.length === 0) {
 
+        clearCartButton?.classList.add("d-none");
+        if (checkoutButton) checkoutButton.disabled = true;
+
         cartItems.innerHTML = `
 
             <div class="nutridust-cart-empty">
@@ -78,6 +86,9 @@ export function renderCart() {
 
         return;
     }
+
+    clearCartButton?.classList.remove("d-none");
+    if (checkoutButton) checkoutButton.disabled = false;
 
 
     // =================================================
@@ -182,7 +193,7 @@ export function renderCart() {
         ) {
 
             imageUrl =
-                `http://localhost:5000${imageUrl}`;
+                `${__API_ORIGIN__}${imageUrl}`;
 
         }
 
@@ -387,6 +398,15 @@ export function renderCart() {
 
                         ₦${subtotal.toLocaleString()}
 
+                        <button
+                            class="btn btn-sm btn-outline-danger remove-cart-item mt-2"
+                            data-id="${escapeHtml(productId)}"
+                            data-name="${escapeHtml(item.name)}"
+                            type="button"
+                            aria-label="Remove ${escapeHtml(item.name)} from cart">
+                            <i class="bi bi-trash3 me-1"></i> Remove
+                        </button>
+
                     </div>
 
 
@@ -548,6 +568,24 @@ export function renderCart() {
             );
 
         });
+
+    document.querySelectorAll(".remove-cart-item").forEach(button => {
+        button.addEventListener("click", () => {
+            if (window.confirm(`Remove ${button.dataset.name || "this item"} from your cart?`)) {
+                removeFromCart(button.dataset.id);
+                renderCart();
+            }
+        });
+    });
+
+    if (clearCartButton) {
+        clearCartButton.onclick = () => {
+            if (window.confirm("Remove all items from your cart?")) {
+                clearCart();
+                renderCart();
+            }
+        };
+    }
 
 }
 

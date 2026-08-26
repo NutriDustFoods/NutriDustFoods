@@ -6,8 +6,7 @@ import { createStars } from "../utils/rating.js";
 // API SERVER
 // =====================================================
 
-const API_BASE_URL =
-    "http://localhost:5000";
+const API_BASE_URL = __API_ORIGIN__;
 
 
 // =====================================================
@@ -190,7 +189,7 @@ export async function Products() {
 
                 <div class="col-lg-4 col-md-6">
 
-                    <div class="card product-card h-100">
+                    <div class="card product-card h-100" data-product-card="${product.id}">
 
                         <!-- ================================================= -->
                         <!-- IMAGE -->
@@ -325,7 +324,7 @@ export async function Products() {
                             <!-- PRICE -->
 
                             <h3
-                                class="text-warning fw-bold"
+                                class="text-warning fw-bold" data-product-price
                             >
 
                                 ₦${Number(
@@ -339,7 +338,7 @@ export async function Products() {
                             <!-- STOCK -->
                             <!-- ================================================= -->
 
-                            ${getStockDisplay(product)}
+                            <div data-product-stock>${getStockDisplay(product)}</div>
 
 
                             <!-- ================================================= -->
@@ -446,4 +445,18 @@ export async function Products() {
 
     `;
 
+}
+
+export async function refreshCustomerProductsSilently() {
+    const products=await getProducts();
+    products.forEach(product=>{
+        const card=document.querySelector(`[data-product-card="${product.id}"]`);
+        if(!card)return;
+        const stock=card.querySelector("[data-product-stock]"),stockHtml=getStockDisplay(product);
+        if(stock&&stock.innerHTML!==stockHtml)stock.innerHTML=stockHtml;
+        const price=card.querySelector("[data-product-price]"),priceText=`₦${Number(product.price||0).toLocaleString()}`;
+        if(price&&price.textContent.trim()!==priceText)price.textContent=priceText;
+        const add=card.querySelector(".add-to-cart"),out=Number(product.quantityAvailable??0)<=0;
+        if(add){add.disabled=out;add.innerHTML=out?'Out of Stock':'<i class="bi bi-cart-plus"></i> Add to Cart';}
+    });
 }

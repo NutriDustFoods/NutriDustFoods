@@ -1,0 +1,8 @@
+{
+  "appId": "com.nutridust.foods",
+  "appName": "NutriDust Foods",
+  "webDir": "../../dist-customer",
+  "android": {
+    "allowMixedContent": true
+  }
+}

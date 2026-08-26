@@ -5,11 +5,32 @@ import {
     verifyOrderPayment
 } from "../controllers/paymentController.js";
 
-const router = express.Router();
+import {
+    authenticateCustomer
+} from "../middleware/authMiddleware.js";
+
+
+const router =
+    express.Router();
+
+
+// =====================================================
+// CUSTOMER AUTHENTICATION
+// =====================================================
+//
+// Both payment endpoints require the customer to be
+// logged in.
+//
+// =====================================================
+
+router.use(
+    authenticateCustomer
+);
 
 
 // =====================================================
 // INITIALIZE PAYMENT
+// POST /api/payments/initialize
 // =====================================================
 
 router.post(
@@ -20,6 +41,7 @@ router.post(
 
 // =====================================================
 // VERIFY PAYMENT
+// GET /api/payments/verify/:reference
 // =====================================================
 
 router.get(
@@ -27,5 +49,9 @@ router.get(
     verifyOrderPayment
 );
 
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 export default router;

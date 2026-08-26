@@ -7,7 +7,7 @@ import * as bootstrap from "bootstrap";
 // =====================================================
 
 const API = axios.create({
-    baseURL: "http://localhost:5000/api"
+    baseURL: __API_URL__
 });
 
 
@@ -631,6 +631,13 @@ export function AdminProducts() {
                                     </h5>
 
 
+                                    <div class="btn-group" role="group" aria-label="Inventory history actions">
+                                    <button type="button" class="btn btn-sm btn-outline-success" id="exportInventoryExcelButton" title="Export Excel">
+                                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="exportInventoryPdfButton" title="Export PDF">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                    </button>
                                     <button
                                         type="button"
                                         class="btn btn-sm btn-outline-dark"
@@ -640,6 +647,7 @@ export function AdminProducts() {
                                         <i class="bi bi-arrow-clockwise"></i>
 
                                     </button>
+                                    </div>
 
                                 </div>
 
@@ -837,7 +845,7 @@ export async function loadAdminProducts() {
                         ? (
                             product.image.startsWith("http")
                                 ? product.image
-                                : `http://localhost:5000${product.image}`
+                                : `${__API_ORIGIN__}${product.image}`
                         )
                         : "";
 
@@ -1952,6 +1960,31 @@ async function loadInventoryHistory(productId) {
 }
 
 
+async function downloadInventoryReport(format) {
+    const productId = document.getElementById("inventoryModal")?.dataset?.productId;
+    if (!productId || !["excel", "pdf"].includes(format)) return;
+    const button = document.getElementById(format === "excel" ? "exportInventoryExcelButton" : "exportInventoryPdfButton");
+    const original = button?.innerHTML;
+    if (button) { button.disabled = true; button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
+    try {
+        const response = await API.get(`/admin/inventory/reports/${format}`, { params:{ productId }, responseType:"blob" });
+        const extension = format === "excel" ? "xlsx" : "pdf";
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `nutridust-inventory-product-${productId}.${extension}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert("Unable to export the inventory report. Please try again.");
+    } finally {
+        if (button) { button.disabled = false; button.innerHTML = original; }
+    }
+}
+
+
 // =====================================================
 // OPEN ADD PRODUCT
 // =====================================================
@@ -2064,7 +2097,7 @@ function openProductModal(product) {
         const imageUrl =
             product.image.startsWith("http")
                 ? product.image
-                : `http://localhost:5000${product.image}`;
+                : `${__API_ORIGIN__}${product.image}`;
 
 
         preview.innerHTML = `
@@ -2544,6 +2577,9 @@ export function setupAdminProducts() {
 
             }
         );
+
+    document.getElementById("exportInventoryExcelButton")?.addEventListener("click", () => downloadInventoryReport("excel"));
+    document.getElementById("exportInventoryPdfButton")?.addEventListener("click", () => downloadInventoryReport("pdf"));
 
 
     setupImagePreview();

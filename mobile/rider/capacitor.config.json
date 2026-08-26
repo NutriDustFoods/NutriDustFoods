@@ -1,0 +1,8 @@
+{
+  "appId": "com.nutridust.rider",
+  "appName": "NutriDust Rider",
+  "webDir": "../../dist-rider",
+  "android": {
+    "allowMixedContent": true
+  }
+}

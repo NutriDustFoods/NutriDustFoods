@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/products";
+const API_URL = `${__API_URL__}/products`;
 
 export async function getProducts() {
     try {

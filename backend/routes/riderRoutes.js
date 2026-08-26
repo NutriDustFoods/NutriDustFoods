@@ -1,0 +1,21 @@
+import express from "express";
+import { riderLogin, getRiderMe, getRiderDashboard, getRiderDeliveries, updateDeliveryStatus, updateAvailability, updateLocation, getRiderEarnings, markNotificationsRead } from "../controllers/riderController.js";
+import { riderAuth } from "../middleware/riderAuth.js";
+import { getCommerceDashboard, activateSubscription, applyReferral, requestWithdrawal, savePushSubscription } from "../controllers/riderCommerceController.js";
+
+const router = express.Router();
+router.post("/login", riderLogin);
+router.get("/me", riderAuth, getRiderMe);
+router.get("/dashboard", riderAuth, getRiderDashboard);
+router.get("/deliveries", riderAuth, getRiderDeliveries);
+router.patch("/deliveries/:id/status", riderAuth, updateDeliveryStatus);
+router.patch("/availability", riderAuth, updateAvailability);
+router.post("/location", riderAuth, updateLocation);
+router.get("/earnings", riderAuth, getRiderEarnings);
+router.patch("/notifications/read", riderAuth, markNotificationsRead);
+router.get("/commerce", riderAuth, getCommerceDashboard);
+router.post("/subscriptions", riderAuth, activateSubscription);
+router.post("/referrals/apply", riderAuth, applyReferral);
+router.post("/withdrawals", riderAuth, requestWithdrawal);
+router.post("/push-subscriptions", riderAuth, savePushSubscription);
+export default router;

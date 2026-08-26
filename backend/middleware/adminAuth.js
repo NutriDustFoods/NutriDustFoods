@@ -66,6 +66,13 @@ export const adminAuth = (req, res, next) => {
                 process.env.JWT_SECRET
             );
 
+        if (decoded?.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
 
         // -------------------------------------------------
         // Attach admin information
