@@ -11,6 +11,7 @@ import {
     releaseFailedPaymentReservation
 } from "../services/paymentCleanupService.js";
 import { autoAssignPaidOrder } from "../services/riderDispatchService.js";
+import { alertPaidOrder } from "../services/adminAlertService.js";
 
 
 // =====================================================
@@ -1591,6 +1592,8 @@ for (
         parseOrderItems(
             updatedOrder
         );
+
+        await alertPaidOrder(updatedOrder);
 
 
         // =================================================

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import db from "../config/sqlite.js";
 import { getRiderAppUrl, sendEmail } from "../services/emailService.js";
 import { getRiderDocumentAccess, uploadRiderDocument } from "../services/riderDocumentStorageService.js";
+import { alertNewRiderApplication } from "../services/adminAlertService.js";
 
 const hashToken = token => crypto.createHash("sha256").update(token).digest("hex");
 const token = () => crypto.randomBytes(32).toString("hex");
@@ -37,7 +38,9 @@ export const submitRiderApplication = async (req, res) => {
                 trackingCode, String(firstName).trim(), middleName ? String(middleName).trim() : null, String(surname).trim(),
                 normalizedPhone, normalizedEmail, String(vehicleType).trim(), String(plateNumber).trim().toUpperCase(), licensePath, ownershipPath
             );
-        return res.status(201).json({ success:true, message:"Application received. NutriDust will review your details and documents.", trackingCode, applicationId:Number(result.lastInsertRowid) });
+        const applicationId = Number(result.lastInsertRowid);
+        await alertNewRiderApplication({ id:applicationId, firstName:String(firstName).trim(), surname:String(surname).trim(), phone:normalizedPhone, email:normalizedEmail, vehicleType:String(vehicleType).trim(), plateNumber:String(plateNumber).trim().toUpperCase(), trackingCode });
+        return res.status(201).json({ success:true, message:"Application received. NutriDust will review your details and documents.", trackingCode, applicationId });
     } catch (error) {
         return res.status(500).json({ success:false, message:error.message || "Unable to submit rider application." });
     }
