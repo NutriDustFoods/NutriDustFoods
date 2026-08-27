@@ -38,10 +38,20 @@ const app = express();
 // CORS
 // =====================================================
 
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost",
+    "https://localhost",
+    "capacitor://localhost",
+    ...(process.env.FRONTEND_URL || "")
+        .split(",")
+        .map(value => value.trim())
+        .filter(Boolean)
+];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL
-        ? process.env.FRONTEND_URL.split(",").map(value => value.trim())
-        : ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "https://localhost", "capacitor://localhost"],
+    origin: [...new Set(allowedOrigins)],
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
