@@ -96,7 +96,7 @@ export const recordRiderInspection = async (req, res) => {
             emailSent = await sendEmail({ to:application.email, subject:"NutriDust rider inspection update", text:`Your bike inspection result is: ${status}. ${notes}`, html:`<p>Hello ${application.first_name},</p><p>Your bike inspection result is <strong>${status}</strong>.</p>${notes?`<p>Notes: ${notes}</p>`:""}<p>${status==="passed"?"Your application can now proceed to final approval.":"NutriDust will contact you about the next step."}</p>` });
         }
     } catch (error) { console.error("Rider inspection email failed:", error.message); }
-    return res.json({ success:true, emailSent, message:emailSent ? "Physical inspection recorded and the rider was emailed." : "Physical inspection recorded, but email could not be sent. Check EMAIL_USER and EMAIL_PASS on Render." });
+    return res.json({ success:true, emailSent, message:emailSent ? "Physical inspection recorded and the rider was emailed." : "Physical inspection recorded, but email could not be sent. Check RESEND_API_KEY and the verified sender domain on Render." });
 };
 
 const uniqueUsername = (firstName, surname) => {
@@ -126,7 +126,7 @@ export const approveRiderApplication = async (req, res) => {
     const loginUrl = getRiderAppUrl();
     let emailSent=false;
     try { emailSent=await sendEmail({ to:application.email, subject:"Your NutriDust rider account is approved", text:`Username: ${username}\nTemporary password: ${temporaryPassword}\nLogin: ${loginUrl}\nYou must change your password after signing in.`, html:`<p>Your rider application passed.</p><p>Username: <strong>${username}</strong><br>Temporary password: <strong>${temporaryPassword}</strong></p><p><a href="${loginUrl}">Sign in</a>. You may change this password after signing in.</p>` }); } catch(error) { console.error("Rider approval email failed:",error.message); }
-    return res.status(201).json({ success:true, emailSent, message:emailSent?"Rider passed. Login created and emailed.":"Rider passed and login created, but email was not sent. Check the Render email settings.", riderId, credentials:{ username, temporaryPassword } });
+    return res.status(201).json({ success:true, emailSent, message:emailSent?"Rider passed. Login created and emailed.":"Rider passed and login created, but email was not sent. Check RESEND_API_KEY and the verified sender domain on Render.", riderId, credentials:{ username, temporaryPassword } });
 };
 
 export const rejectRiderApplication = (req, res) => {
