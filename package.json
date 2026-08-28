@@ -10,7 +10,8 @@
     "mobile:prepare": "node scripts/prepare-mobile-web.mjs",
     "mobile:sync": "npm run mobile:prepare && node scripts/sync-mobile.mjs",
     "apk:customer": "npm run mobile:sync && cd mobile/customer/android && gradlew.bat assembleDebug",
-    "apk:rider": "npm run mobile:sync && cd mobile/rider/android && gradlew.bat assembleDebug"
+    "apk:rider": "npm run mobile:sync && cd mobile/rider/android && gradlew.bat assembleDebug",
+    "apk:admin": "npm run mobile:sync && cd mobile/admin/android && gradlew.bat assembleDebug"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

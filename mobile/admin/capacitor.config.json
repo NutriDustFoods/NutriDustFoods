@@ -1,0 +1,8 @@
+{
+  "appId": "com.nutridust.admin",
+  "appName": "NutriDust Admin",
+  "webDir": "../../dist-admin",
+  "android": {
+    "allowMixedContent": true
+  }
+}
