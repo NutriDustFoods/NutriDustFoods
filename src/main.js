@@ -27,6 +27,7 @@ import { PaymentSuccess } from "./components/PaymentSuccess.js";
 import { TrackOrder } from "./components/TrackOrder.js";
 import { CustomerAccount, setupCustomerAccount } from "./components/CustomerAccount.js";
 import { CustomerOrder, setupCustomerOrders } from "./components/CustomerOrder.js";
+import { ComplianceFooter, renderCompliancePage } from "./components/CompliancePages.js";
 
 
 // =====================================================
@@ -764,6 +765,12 @@ async function init() {
 
     try {
 
+        // Public compliance routes must remain available even when the
+        // product API or customer storefront is temporarily unavailable.
+        if (renderCompliancePage()) {
+            return;
+        }
+
         // =================================================
         // GET PRODUCTS
         // =================================================
@@ -809,6 +816,8 @@ async function init() {
             ${CustomerAccount()}
 
             ${CustomerOrder()}
+
+            ${ComplianceFooter()}
 
         `;
 

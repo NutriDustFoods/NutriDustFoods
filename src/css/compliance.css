@@ -1,0 +1,162 @@
+:root {
+    color-scheme: dark;
+}
+
+.compliance-page {
+    min-height: 100vh;
+    background: #0b0d0f;
+    color: #e8eaed;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.compliance-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem max(1.25rem, calc((100vw - 1080px) / 2));
+    border-bottom: 1px solid #292d31;
+    background: rgba(15, 18, 21, .96);
+    backdrop-filter: blur(12px);
+}
+
+.compliance-brand,
+.compliance-home,
+.compliance-card a,
+.compliance-footer a {
+    color: #ffc107;
+}
+
+.compliance-brand {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    color: #ffc107;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.compliance-brand img {
+    width: 38px;
+    height: 38px;
+}
+
+.compliance-home {
+    padding: .55rem .9rem;
+    border: 1px solid #806100;
+    border-radius: .7rem;
+    text-decoration: none;
+}
+
+.compliance-main {
+    width: min(1080px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 4rem 0;
+}
+
+.compliance-title {
+    max-width: 800px;
+    margin-bottom: 2rem;
+}
+
+.compliance-kicker {
+    margin: 0 0 .6rem;
+    color: #ffc107;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .2em;
+}
+
+.compliance-title h1 {
+    margin: 0 0 .8rem;
+    color: #fff;
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    line-height: 1.05;
+}
+
+.compliance-title > p:not(.compliance-kicker) {
+    color: #c4c8cc;
+    font-size: 1.1rem;
+}
+
+.compliance-title small {
+    color: #8f969d;
+}
+
+.compliance-card {
+    overflow: hidden;
+    border: 1px solid #292d31;
+    border-radius: 1.2rem;
+    background: #14171a;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .28);
+}
+
+.compliance-card section {
+    padding: 1.6rem 1.8rem;
+    border-bottom: 1px solid #292d31;
+}
+
+.compliance-card section:last-child {
+    border-bottom: 0;
+}
+
+.compliance-card h2 {
+    margin: 0 0 .8rem;
+    color: #ffc107;
+    font-size: 1.18rem;
+}
+
+.compliance-card p,
+.compliance-card li {
+    color: #d1d4d7;
+    line-height: 1.75;
+}
+
+.compliance-card ul,
+.compliance-card ol {
+    margin-bottom: 0;
+    padding-left: 1.3rem;
+}
+
+.compliance-footer {
+    display: grid;
+    gap: 1.2rem;
+    padding: 2rem max(1.25rem, calc((100vw - 1080px) / 2));
+    border-top: 1px solid #292d31;
+    background: #101214;
+}
+
+.compliance-footer div,
+.compliance-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1.25rem;
+}
+
+.compliance-footer div {
+    flex-direction: column;
+    gap: .25rem;
+}
+
+.compliance-footer span,
+.compliance-footer small {
+    color: #8f969d;
+}
+
+@media (max-width: 600px) {
+    .compliance-main {
+        padding: 2.5rem 0;
+    }
+
+    .compliance-card section {
+        padding: 1.3rem 1.15rem;
+    }
+
+    .compliance-home {
+        font-size: .88rem;
+    }
+}
