@@ -1,4 +1,5 @@
 @import './css/navbar.css';
+@import './css/customer-mobile.css';
 @import './css/hero.css';
 @import './css/products.css';
 @import './css/about.css';
@@ -214,6 +215,11 @@ html{
 .profile-stat strong { font-size: 1.6rem; }
 .profile-stat span { color: #68726b; font-size: .8rem; }
 .customer-order-list { display: grid; gap: 16px; }
+.customer-order-card-live { border-color:#198754; box-shadow:0 0 0 3px rgba(25,135,84,.08),0 10px 28px rgba(20,70,42,.12); }
+.customer-live-banner { display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:12px 14px; border-radius:14px; background:#e8f7ee; color:#146c43; }
+.customer-live-banner small { display:block; color:#4c705c; }
+.customer-live-pulse { width:12px; height:12px; flex:0 0 auto; border-radius:50%; background:#20c36a; box-shadow:0 0 0 0 rgba(32,195,106,.55); animation:customer-live-pulse 1.6s infinite; }
+@keyframes customer-live-pulse { 70% { box-shadow:0 0 0 10px rgba(32,195,106,0); } 100% { box-shadow:0 0 0 0 rgba(32,195,106,0); } }
 
 .customer-order-card {
     padding: 20px;
@@ -266,6 +272,22 @@ html{
         z-index: 1005;
         box-shadow: inset 0 -1px #dce3df;
     }
+}
+
+.active-rider-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.active-rider-tools { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr); gap:16px; margin-bottom:18px; }
+.rider-tool-card { display:grid; grid-template-columns:minmax(150px,.55fr) minmax(220px,1fr) auto; align-items:end; gap:10px 12px; padding:16px; border:1px solid #e0e6e2; border-radius:16px; background:#f7f9f8; }
+.rider-tool-title { grid-column:1/-1; display:flex; align-items:center; gap:9px; color:#17201b; font-weight:800; }
+.rider-tool-title i { display:grid; width:34px; height:34px; place-content:center; border-radius:10px; background:#e3efe7; color:#198754; }
+.rider-tool-card .form-label { margin:0; font-size:.78rem; font-weight:700; }
+.rider-tool-card .form-control,.rider-tool-card .form-select,.rider-tool-card .btn { min-height:46px; }
+.rider-tracking-tool { grid-template-columns:1fr; }
+.admin-live-tracking:empty { display:none; }
+
+@media (max-width: 900px) {
+    .active-rider-tools { grid-template-columns:1fr; }
+    .rider-tool-card { grid-template-columns:1fr; }
+    .rider-tool-title { grid-column:auto; }
 }
 
 /* Consistent record-management layout for Products, Riders, Withdrawals and Staff. */

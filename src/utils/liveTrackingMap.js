@@ -13,6 +13,7 @@ const osmEmbedUrl = location => {
 };
 
 export const googleMapUrl = location => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.latitude},${location.longitude}`)}`;
+export const wazeMapUrl = location => `https://www.waze.com/ul?ll=${encodeURIComponent(`${location.latitude},${location.longitude}`)}&navigate=yes`;
 
 export function liveTrackingMarkup(tracking) {
     if (!tracking.deliveryId) {
@@ -38,10 +39,19 @@ export function liveTrackingMarkup(tracking) {
                     <h4>${safe(tracking.phase)}</h4>
                     <p>${tracking.rider ? `${safe(tracking.rider.name)} · ${safe(tracking.rider.vehicleType || "Rider")}${tracking.rider.vehicleRegistrationNumber ? ` · ${safe(tracking.rider.vehicleRegistrationNumber)}` : ""}` : "Assigned rider"}</p>
                 </div>
-                <a class="btn btn-sm btn-outline-dark" href="${googleMapUrl(tracking.location)}" target="_blank" rel="noopener">Open map</a>
+                <div class="live-tracking-actions">
+                    <a class="btn btn-sm btn-outline-dark" href="${googleMapUrl(tracking.location)}" target="_blank" rel="noopener"><i class="bi bi-map me-1"></i>Google Maps</a>
+                    <a class="btn btn-sm btn-primary" href="${wazeMapUrl(tracking.location)}" target="_blank" rel="noopener"><i class="bi bi-navigation-fill me-1"></i>Waze</a>
+                </div>
             </div>
-            <iframe class="live-tracking-map" title="Live rider location" loading="lazy" referrerpolicy="no-referrer" src="${osmEmbedUrl(tracking.location)}"></iframe>
-            <small class="live-tracking-updated">Updated ${safe(updated)}${safe(accuracy)}</small>
+            <div class="live-tracking-body">
+                <iframe class="live-tracking-map" title="Live rider location" loading="eager" referrerpolicy="no-referrer" src="${osmEmbedUrl(tracking.location)}"></iframe>
+                <div class="live-tracking-details">
+                    <strong><i class="bi bi-broadcast-pin me-2"></i>${tracking.locationFresh ? "Receiving live GPS" : "Waiting for a fresh GPS update"}</strong>
+                    <p>${tracking.locationFresh ? "This position refreshes automatically while the Rider App is open and location is enabled." : "Ask the rider to open the Rider App, switch availability on, enable phone Location, and allow precise location access."}</p>
+                    <small>Updated ${safe(updated)}${safe(accuracy)}</small>
+                </div>
+            </div>
         </div>
     `;
 }

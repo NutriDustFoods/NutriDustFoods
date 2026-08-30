@@ -1062,6 +1062,14 @@ export const getMyOrders = (req, res) => {
                     order_status
                         AS orderStatus,
 
+                    (
+                        SELECT delivery_status
+                        FROM deliveries
+                        WHERE order_id = orders.id
+                        ORDER BY id DESC
+                        LIMIT 1
+                    ) AS deliveryStatus,
+
                     payment_reference
                         AS paymentReference,
 

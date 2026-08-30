@@ -565,6 +565,14 @@ export function Navbar() {
 
 </nav>
 
+<nav class="customer-mobile-nav" aria-label="Customer app navigation">
+    <a href="#" class="active" data-customer-mobile-tab="home"><i class="bi bi-house-door"></i><span>Home</span></a>
+    <a href="#products" data-customer-mobile-tab="products"><i class="bi bi-grid"></i><span>Shop</span></a>
+    <button type="button" id="mobileCartButton"><i class="bi bi-cart3"></i><span>Cart</span></button>
+    <button type="button" id="mobileOrdersButton"><i class="bi bi-box-seam"></i><span>Orders</span></button>
+    <button type="button" id="mobileAccountButton"><i class="bi bi-person"></i><span>Account</span></button>
+</nav>
+
     `;
 
 }
@@ -579,6 +587,28 @@ export function initNavbarAccount() {
     console.log(
         "👤 Initializing customer navbar..."
     );
+
+    document.getElementById("mobileCartButton")?.addEventListener("click", () => {
+        document.getElementById("cartButton")?.click();
+    });
+
+    document.getElementById("mobileOrdersButton")?.addEventListener("click", () => {
+        if (document.getElementById("customerOrdersButton")) window.dispatchEvent(new CustomEvent("nutridust:open-orders"));
+        else document.getElementById("customerLoginButton")?.click();
+    });
+
+    document.getElementById("mobileAccountButton")?.addEventListener("click", () => {
+        const profileButton = document.getElementById("customerProfileButton");
+        if (profileButton) profileButton.click();
+        else document.getElementById("customerLoginButton")?.click();
+    });
+
+    document.querySelectorAll("[data-customer-mobile-tab]").forEach(item => {
+        item.addEventListener("click", () => {
+            document.querySelectorAll("[data-customer-mobile-tab]").forEach(link => link.classList.remove("active"));
+            item.classList.add("active");
+        });
+    });
 
 
     // =================================================

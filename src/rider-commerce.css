@@ -9,6 +9,7 @@
     border-radius: 18px;
 }
 .benefit-grid h3 { font-size: 1.1rem; }
+.rider-navigation { display:flex; gap:8px; margin:-7px 0 16px; }
 @media (max-width: 650px) {
     .benefit-grid { grid-template-columns: 1fr; }
 }
