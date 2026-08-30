@@ -28,14 +28,14 @@ const permissionChecks = (selected = [], name = "permission") => Object.entries(
     .join("");
 
 export function AdminStaff() {
-    return `<section class="container-fluid px-lg-5 pb-5"><div class="card shadow-sm"><div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="h4 mb-1">Staff access</h2><p class="text-secondary mb-0">Create a user and select the exact tasks they may perform.</p></div><button class="btn btn-dark" id="openStaffForm">Create User</button></div>
+    return `<section class="container-fluid px-lg-5 pb-5 admin-records-view admin-staff-view"><div class="card shadow-sm admin-records-card"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 admin-records-header"><div><h2 class="h4 mb-1">Staff access</h2><p class="text-secondary mb-0">Create a user and select the exact tasks they may perform.</p></div><button class="btn btn-dark" id="openStaffForm">Create User</button></div>
         <div id="staffMessage"></div>
         <form id="staffForm" class="d-none mb-4 border rounded p-3">
             <div class="row g-2 mb-3"><div class="col-md-3"><input name="fullName" class="form-control" placeholder="Full name" required></div><div class="col-md-2"><input name="username" class="form-control" placeholder="Username" required></div><div class="col-md-2"><input name="password" type="password" minlength="8" class="form-control" placeholder="Temporary password" required></div><div class="col-md-2"><select name="role" class="form-select"><option value="staff">Staff</option><option value="manager">Manager</option><option value="accountant">Accountant</option><option value="cashier">Cashier</option><option value="support">Support</option></select></div><div class="col-md-3"><input name="phone" class="form-control" placeholder="Phone (optional)"></div></div>
             <h3 class="h6">Allowed tasks</h3><div class="row">${permissionChecks()}</div><button class="btn btn-success mt-2">Create account</button>
         </form>
-        <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Name</th><th>Username</th><th>Job title</th><th>Allowed tasks</th><th>Status</th><th></th></tr></thead><tbody id="staffRows"><tr><td colspan="6">Loading...</td></tr></tbody></table></div>
+        <div class="table-responsive admin-records-scroll"><table class="table align-middle"><thead><tr><th>Name</th><th>Username</th><th>Job title</th><th>Allowed tasks</th><th>Status</th><th></th></tr></thead><tbody id="staffRows"><tr><td colspan="6">Loading...</td></tr></tbody></table></div>
     </div></div></section>`;
 }
 

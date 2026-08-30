@@ -47,9 +47,9 @@ export function AdminProducts() {
 
     return `
 
-        <div class="container-fluid py-4 px-lg-5">
+        <div class="container-fluid py-4 px-lg-5 admin-records-view admin-products-view">
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 admin-records-header">
 
                 <div>
 
@@ -88,11 +88,11 @@ export function AdminProducts() {
             <!-- PRODUCTS TABLE -->
             <!-- ================================================= -->
 
-            <div class="card border-0 shadow-sm">
+            <div class="card border-0 shadow-sm admin-records-card">
 
                 <div class="card-body">
 
-                    <div class="table-responsive">
+                    <div class="table-responsive admin-records-scroll">
 
                         <table class="table table-hover align-middle">
 

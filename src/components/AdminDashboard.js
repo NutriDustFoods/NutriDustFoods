@@ -66,7 +66,7 @@ export function AdminDashboard() {
 
             <!-- HEADER -->
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 admin-orders-title">
 
                 <div>
 
@@ -134,7 +134,7 @@ export function AdminDashboard() {
 
             <!-- STATISTICS -->
 
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-4 admin-orders-stats">
 
                 <div class="col-sm-6 col-xl-3">
 
@@ -354,7 +354,7 @@ export function AdminDashboard() {
                     </div>
 
 
-                    <div class="table-responsive">
+                    <div class="table-responsive admin-order-records-scroll">
 
                         <table class="table table-hover align-middle">
 

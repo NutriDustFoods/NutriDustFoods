@@ -409,6 +409,15 @@ function showAdminDashboard(user) {
     `;
 
     document.querySelector(`[data-admin-view="${firstView}"]`)?.removeAttribute("hidden");
+    const taskbar = document.querySelector(".admin-taskbar");
+    if (taskbar) {
+        const measureTaskbar = () => document.documentElement.style.setProperty(
+            "--admin-taskbar-height",
+            `${Math.ceil(taskbar.getBoundingClientRect().height)}px`
+        );
+        measureTaskbar();
+        new ResizeObserver(measureTaskbar).observe(taskbar);
+    }
     setupAdminWorkspaceNavigation(firstView);
 
 }
