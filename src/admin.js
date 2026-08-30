@@ -2,6 +2,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import "./style.css";
+import "./css/admin-dark.css";
 
 import axios from "axios";
 
@@ -61,6 +62,8 @@ const viewPermissions = {
 
 const can = (permission, user = getAdminUser()) =>
     user?.role === "admin" || user?.permissions?.includes("*") || user?.permissions?.includes(permission);
+
+const safeInitials = value => String(value || "NA").trim().split(/\s+/).slice(0, 2).map(part => part[0] || "").join("").toUpperCase();
 
 window.nutridustAdminCan = permission => can(permission);
 
@@ -387,6 +390,7 @@ function showAdminDashboard(user) {
         <div class="admin-workspace">
             <nav class="admin-taskbar" aria-label="Admin tasks">
                 <div class="admin-taskbar__brand"><span>NutriDust</span><small>${user?.role === "admin" ? "Administrator" : user?.jobRole || "Staff"}</small></div>
+                <div class="admin-nav-label">Workspace</div>
                 <div class="admin-taskbar__items" role="tablist">
                     ${button("orders", "bi-receipt", "Orders", firstView === "orders")}
                     ${button("operations", "bi-speedometer2", "Overview", firstView === "operations")}
@@ -395,15 +399,21 @@ function showAdminDashboard(user) {
                     ${button("withdrawals", "bi-wallet2", "Withdrawals", firstView === "withdrawals")}
                     ${button("staff", "bi-people", "Staff", firstView === "staff")}
                 </div>
+                <div class="admin-sidebar-spacer"></div>
+                <div class="admin-help-card"><i class="bi bi-headset"></i><div><strong>Need help?</strong><small>Contact NutriDust support for assistance.</small></div></div>
+                <button class="admin-sidebar-logout" id="workspaceLogout"><i class="bi bi-box-arrow-right"></i><span>Log out</span></button>
             </nav>
-            <main class="admin-view-stack">
-                ${view("orders", AdminDashboard())}
-                ${view("operations", AdminOperations())}
-                ${view("products", AdminProducts())}
-                ${view("riders", AdminRiders())}
-                ${view("withdrawals", AdminWithdrawals())}
-                ${view("staff", AdminStaff())}
-            </main>
+            <div class="admin-main-shell">
+                <header class="admin-topbar"><div><span class="admin-topbar-kicker">NutriDust Foods</span><strong id="adminCurrentSection">Dashboard</strong></div><div class="admin-topbar-actions"><button type="button" aria-label="Search"><i class="bi bi-search"></i></button><button type="button" aria-label="Notifications"><i class="bi bi-bell"></i><span></span></button><div class="admin-profile-avatar">${safeInitials(user?.fullName || user?.username || "Admin")}</div><div class="admin-profile-copy"><strong>${user?.fullName || user?.username || "NutriDust Admin"}</strong><small>${user?.role === "admin" ? "Administrator" : user?.jobRole || "Staff"}</small></div></div></header>
+                <main class="admin-view-stack">
+                    ${view("orders", AdminDashboard())}
+                    ${view("operations", AdminOperations())}
+                    ${view("products", AdminProducts())}
+                    ${view("riders", AdminRiders())}
+                    ${view("withdrawals", AdminWithdrawals())}
+                    ${view("staff", AdminStaff())}
+                </main>
+            </div>
         </div>
 
     `;
@@ -411,25 +421,30 @@ function showAdminDashboard(user) {
     document.querySelector(`[data-admin-view="${firstView}"]`)?.removeAttribute("hidden");
     const taskbar = document.querySelector(".admin-taskbar");
     if (taskbar) {
-        const measureTaskbar = () => document.documentElement.style.setProperty(
-            "--admin-taskbar-height",
-            `${Math.ceil(taskbar.getBoundingClientRect().height)}px`
-        );
+        const measureTaskbar = () => {
+            const topbar=document.querySelector(".admin-topbar");
+            const height=window.innerWidth<=800?taskbar.getBoundingClientRect().height:(topbar?.getBoundingClientRect().height||72);
+            document.documentElement.style.setProperty("--admin-taskbar-height",`${Math.ceil(height)}px`);
+        };
         measureTaskbar();
         new ResizeObserver(measureTaskbar).observe(taskbar);
+        window.addEventListener("resize",measureTaskbar,{passive:true});
     }
     setupAdminWorkspaceNavigation(firstView);
+    document.getElementById("workspaceLogout")?.addEventListener("click",()=>{if(window.confirm("Log out of the NutriDust admin dashboard?")){clearAdminSession();showLoginPage();}});
 
 }
 
 function setupAdminWorkspaceNavigation(defaultView = "orders") {
     const buttons=[...document.querySelectorAll("[data-admin-target]")],views=[...document.querySelectorAll("[data-admin-view]")];
     const valid=new Set(views.map(view=>view.dataset.adminView));
+    const labels={orders:"Orders",operations:"Operations overview",products:"Products & stock",riders:"Rider management",withdrawals:"Withdrawals",staff:"Staff access"};
     const show=name=>{
         const selected=valid.has(name)?name:defaultView;
         views.forEach(view=>view.hidden=view.dataset.adminView!==selected);
         buttons.forEach(button=>{const active=button.dataset.adminTarget===selected;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));});
         if(location.hash!==`#${selected}`) history.replaceState(null,"",`#${selected}`);
+        const heading=document.getElementById("adminCurrentSection");if(heading)heading.textContent=labels[selected]||"Dashboard";
         window.scrollTo({top:0,behavior:"smooth"});
     };
     buttons.forEach(button=>button.addEventListener("click",()=>show(button.dataset.adminTarget)));
