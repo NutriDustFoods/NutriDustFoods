@@ -9,6 +9,7 @@ import {
     AdminDashboard,
     loadAdminOrders,
     setupAdminFilters,
+    setupAdminOrderStickyLayout,
     setupAdminRefresh,
     setupAdminLogout
 } from "./components/AdminDashboard.js";
@@ -523,7 +524,10 @@ async function initAdmin() {
     // FILTERS
     // -------------------------------------------------
 
-    if (can("orders.view", user)) setupAdminFilters();
+    if (can("orders.view", user)) {
+        setupAdminFilters();
+        setupAdminOrderStickyLayout();
+    }
 
 
     // -------------------------------------------------

@@ -62,7 +62,7 @@ export function AdminDashboard() {
 
     return `
 
-        <div class="container-fluid py-4 px-lg-5">
+        <div class="container-fluid py-4 px-lg-5 admin-orders-page">
 
             <!-- HEADER -->
 
@@ -236,7 +236,7 @@ export function AdminDashboard() {
 
             <!-- FILTERS -->
 
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="card border-0 shadow-sm mb-4 admin-orders-filters">
 
                 <div class="card-body">
 
@@ -334,7 +334,7 @@ export function AdminDashboard() {
 
             <!-- ORDERS -->
 
-            <div class="card border-0 shadow-sm">
+            <div class="card border-0 shadow-sm admin-orders-list">
 
                 <div class="card-body">
 
@@ -1698,4 +1698,27 @@ function escapeHtml(
             "&#039;"
         );
 
+}
+
+export function setupAdminOrderStickyLayout() {
+    const taskbar = document.querySelector(".admin-taskbar");
+    const filters = document.querySelector(".admin-orders-filters");
+    if (!taskbar || !filters) return;
+
+    const measure = () => {
+        document.documentElement.style.setProperty(
+            "--admin-taskbar-height",
+            `${Math.ceil(taskbar.getBoundingClientRect().height)}px`
+        );
+        document.documentElement.style.setProperty(
+            "--admin-orders-filter-height",
+            `${Math.ceil(filters.getBoundingClientRect().height)}px`
+        );
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(taskbar);
+    observer.observe(filters);
+    window.addEventListener("resize", measure, { passive: true });
 }
