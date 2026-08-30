@@ -19,6 +19,9 @@ export function liveTrackingMarkup(tracking) {
     if (!tracking.deliveryId) {
         return `<div class="alert alert-info mb-0">A rider has not been assigned to this order yet.</div>`;
     }
+    if (!tracking.active) {
+        return `<div class="tracking-finished-state"><i class="bi bi-check-circle-fill"></i><div><strong>${safe(tracking.phase || "Delivery completed")}</strong><p>Live tracking has ended because this delivery is no longer active. Enter an order that is currently assigned, collected, or out for delivery to view its rider on the map.</p></div></div>`;
+    }
     if (!tracking.trackingVisible) {
         return `<div class="alert alert-info mb-0"><strong>${safe(tracking.phase)}</strong><br><small>Customer live tracking begins after the rider collects the order.</small></div>`;
     }

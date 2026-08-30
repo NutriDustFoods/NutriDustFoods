@@ -20,6 +20,19 @@
 .live-tracking-details strong { color: #17201b; }
 .live-tracking-details p { margin: 0; color: #66716a; font-size: .9rem; }
 .live-tracking-details small { color: #6c757d; }
+.tracking-finished-state {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: 1rem;
+    border: 1px solid #bfe1cf;
+    border-radius: .85rem;
+    background: #edf8f2;
+    color: #174b31;
+}
+.tracking-finished-state > i { margin-top: .1rem; color: #198754; font-size: 1.35rem; }
+.tracking-finished-state strong { display: block; margin-bottom: .25rem; font-size: 1rem; }
+.tracking-finished-state p { margin: 0; color: #496359; font-size: .86rem; line-height: 1.45; }
 @media (max-width: 600px) {
     .live-tracking-heading { flex-direction: column; padding: .85rem; }
     .live-tracking-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }

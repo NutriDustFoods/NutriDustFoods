@@ -535,6 +535,126 @@ html{
     }
 }
 
+/* Final two-pane Rider Operations workspace. */
+@media (min-width: 801px) {
+    .admin-riders-view [data-rider-view="operations"] .admin-records-card > .card-body {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .active-rider-split {
+        display: grid;
+        flex: 1 1 auto;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1.55fr) minmax(430px, .85fr);
+        gap: 14px;
+    }
+
+    .rider-record-pane,
+    .rider-action-pane {
+        min-width: 0;
+        min-height: 0;
+        border: 1px solid #e1e7e3;
+        border-radius: 14px;
+        background: #fbfcfb;
+    }
+
+    .rider-record-pane {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        overflow: hidden;
+    }
+
+    .rider-record-pane .rider-list-heading {
+        flex: 0 0 auto;
+        padding: 0 2px 10px;
+    }
+
+    .rider-record-pane .admin-records-scroll {
+        flex: 1 1 auto;
+        width: 100%;
+        height: auto !important;
+        min-height: 220px;
+        border-radius: 10px;
+    }
+
+    .rider-action-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .rider-action-pane .active-rider-tools {
+        display: grid;
+        flex: 0 0 auto;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 0;
+    }
+
+    .rider-action-pane .rider-tool-card,
+    .rider-action-pane #assignRiderForm,
+    .rider-action-pane #adminLiveTrackingForm {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 12px;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(24, 42, 31, .05);
+    }
+
+    .rider-action-pane .rider-tool-title,
+    .rider-action-pane #assignRiderForm > .btn,
+    .rider-action-pane #adminLiveTrackingForm .rider-tool-title {
+        grid-column: auto;
+    }
+
+    .rider-action-pane .admin-live-tracking {
+        display: block;
+        flex: 1 0 auto;
+        width: 100%;
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .rider-action-pane .admin-live-tracking:empty {
+        display: none;
+    }
+
+    .rider-action-pane .live-tracking-body {
+        grid-template-columns: 1fr;
+    }
+
+    .rider-action-pane .live-tracking-map {
+        height: 310px;
+        min-height: 310px;
+    }
+}
+
+@media (min-width: 801px) and (max-width: 1150px) {
+    .active-rider-split {
+        grid-template-columns: minmax(0, 1.2fr) minmax(350px, .8fr);
+    }
+}
+
+@media (max-width: 800px) {
+    .active-rider-split {
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .rider-action-pane { order: 1; }
+    .rider-record-pane { order: 2; }
+}
+
 @media (max-width: 800px) {
     .admin-workspace {
         min-height: 100dvh;

@@ -8,6 +8,14 @@ export function AdminRiders(){return `<section class="container-fluid px-lg-4 pb
 
 export async function setupAdminRiders(){
  const message=document.getElementById("riderAdminMessage"),rows=document.getElementById("riderRows"),applicationRows=document.getElementById("applicationRows"),review=document.getElementById("applicationReview"),select=document.getElementById("assignmentRider"),form=document.getElementById("assignRiderForm"),trackingForm=document.getElementById("adminLiveTrackingForm"),trackingOrder=document.getElementById("adminTrackingOrderId"),trackingBox=document.getElementById("adminLiveTracking");let trackingTimer=null;
+ const operationsBody=document.querySelector('[data-rider-view="operations"] .admin-records-card > .card-body');
+ if(operationsBody&&!operationsBody.querySelector(".active-rider-split")){
+  const split=document.createElement("div"),recordPane=document.createElement("section"),actionPane=document.createElement("aside");
+  split.className="active-rider-split";recordPane.className="rider-record-pane";actionPane.className="rider-action-pane";
+  const listHeading=operationsBody.querySelector(".rider-list-heading"),recordScroll=operationsBody.querySelector(".admin-records-scroll"),tools=operationsBody.querySelector(".active-rider-tools");
+  if(listHeading)recordPane.append(listHeading);if(recordScroll)recordPane.append(recordScroll);if(tools)actionPane.append(tools);if(trackingBox)actionPane.append(trackingBox);
+  split.append(recordPane,actionPane);operationsBody.append(split);
+ }
  trackingOrder?.addEventListener("invalid",()=>{trackingBox.innerHTML='<div class="alert alert-warning mb-0"><strong>Enter the assigned order number first.</strong><br><small>Live tracking is available after an order has been assigned to a rider.</small></div>';});
  const riderTabs=[...document.querySelectorAll("[data-rider-panel]")],riderPanels=[...document.querySelectorAll("[data-rider-view]")];riderTabs.forEach(tab=>tab.addEventListener("click",()=>{riderTabs.forEach(item=>item.classList.toggle("active",item===tab));riderPanels.forEach(panel=>panel.hidden=panel.dataset.riderView!==tab.dataset.riderPanel);document.querySelector(".admin-view-stack")?.scrollTo?.({top:0});}));
  const flash=(text,type="success")=>message.innerHTML=`<div class="alert alert-${type}">${safe(text)}</div>`;
