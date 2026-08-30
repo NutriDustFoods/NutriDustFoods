@@ -64,18 +64,19 @@ const privacyPage = () => pageShell(
                 <li><strong>Orders and delivery:</strong> products ordered, delivery or pickup choice, delivery address, order history and delivery status.</li>
                 <li><strong>Payment information:</strong> payment status, amount and transaction reference. Card and bank details are entered with our payment provider and are not stored by NutriDust Foods.</li>
                 <li><strong>Rider applications:</strong> names, contact details, vehicle type, plate number, driving licence where applicable, proof of ownership, inspection information and onboarding status.</li>
+                <li><strong>Rider location:</strong> precise or approximate GPS coordinates, accuracy and update time while an approved rider is available or completing an assigned delivery.</li>
                 <li><strong>Technical information:</strong> device, browser, IP address, diagnostic logs and security events needed to operate and protect the service.</li>
                 <li><strong>Communications:</strong> messages and support requests sent to us.</li>
             </ul>
         `),
         section("3. How we use information", `
-            <p>We use information to create and secure accounts; process orders and payments; calculate and arrange delivery; provide receipts and order updates; review and onboard riders; assign deliveries; provide customer support; prevent fraud; maintain records; and meet legal obligations.</p>
+            <p>We use information to create and secure accounts; process orders and payments; calculate and arrange delivery; provide receipts and order updates; review and onboard riders; assign deliveries; show authorised staff the assigned rider's progress to pickup and delivery; show a customer the assigned rider's live progress only after pickup; provide customer support; prevent fraud; maintain records; and meet legal obligations.</p>
         `),
         section("4. Services that process information", `
             <p>We use carefully selected providers to operate NutriDust Foods, including hosting, database and file storage, email delivery, notifications and payment processing services. Paystack processes online payments under its own privacy terms. Providers receive only the information needed to perform their services.</p>
         `),
         section("5. Sharing", `
-            <p>We do not sell personal information. We may share necessary order and contact details with assigned riders, authorised staff and service providers. We may disclose information where required by law, to protect users, or to investigate fraud and security incidents.</p>
+            <p>We do not sell personal information. We may share necessary order and contact details with assigned riders, authorised staff and service providers. During an active delivery, the customer may see the assigned rider's current location after pickup, while authorised staff may see the rider travelling to pickup and to the customer. Live customer visibility ends when the delivery is completed, cancelled or failed. We may disclose information where required by law, to protect users, or to investigate fraud and security incidents.</p>
         `),
         section("6. Security and retention", `
             <p>We use access controls, encrypted connections, restricted administrative permissions and other reasonable safeguards. No online system is completely risk-free. We keep information only as long as needed for operations, dispute resolution, fraud prevention and legal or financial record-keeping.</p>

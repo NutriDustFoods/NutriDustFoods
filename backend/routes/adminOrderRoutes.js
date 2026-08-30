@@ -7,6 +7,7 @@ import {
 } from "../controllers/adminOrderController.js";
 
 import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
+import { getAdminLiveTracking } from "../controllers/liveTrackingController.js";
 
 
 const router = express.Router();
@@ -29,6 +30,12 @@ router.get(
     "/",
     requirePermission("orders.view"),
     getAdminOrders
+);
+
+router.get(
+    "/:id/live-location",
+    requirePermission("orders.view"),
+    getAdminLiveTracking
 );
 
 

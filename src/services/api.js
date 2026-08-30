@@ -459,6 +459,12 @@ export const getMyOrders = async () => {
 
 };
 
+export const getOrderLiveLocation = async orderId => {
+    if (!orderId) throw new Error("Order number is required.");
+    const { data } = await API.get(`/orders/${encodeURIComponent(orderId)}/live-location`);
+    return data;
+};
+
 
 // =====================================================
 // INITIALIZE PAYSTACK PAYMENT

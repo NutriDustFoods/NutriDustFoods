@@ -12,6 +12,7 @@ import {
     authenticateCustomer
 } from "../middleware/authMiddleware.js";
 import { calculateDeliveryQuote } from "../services/deliveryPricingService.js";
+import { getCustomerLiveTracking } from "../controllers/liveTrackingController.js";
 
 
 const router =
@@ -51,6 +52,12 @@ router.get(
     "/my",
     authenticateCustomer,
     getMyOrders
+);
+
+router.get(
+    "/:id/live-location",
+    authenticateCustomer,
+    getCustomerLiveTracking
 );
 
 
