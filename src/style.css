@@ -454,7 +454,7 @@ html{
     .admin-riders-view [data-rider-view="operations"] .active-rider-tools {
         grid-area: actions;
         align-self: start;
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr);
         margin: 0;
     }
 
@@ -472,7 +472,8 @@ html{
     .admin-riders-view [data-rider-view="operations"] .admin-live-tracking {
         grid-area: tracking;
         min-width: 0;
-        min-height: 0;
+        min-height: 240px;
+        max-height: 100%;
         margin: 0 !important;
         overflow: auto;
         overscroll-behavior: contain;
@@ -484,6 +485,30 @@ html{
 
     .admin-riders-view [data-rider-view="operations"] .rider-tracking-tool {
         grid-template-columns: minmax(150px, 1fr) auto;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] #assignRiderForm {
+        grid-template-columns: minmax(100px, .7fr) minmax(150px, 1.3fr);
+    }
+
+    .admin-riders-view [data-rider-view="operations"] #assignRiderForm > .btn {
+        grid-column: 1 / -1;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] #adminLiveTrackingForm {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] #adminLiveTrackingForm .rider-tool-title {
+        grid-column: auto;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .rider-tool-title {
+        font-size: .92rem;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .live-tracking-map {
+        min-height: 280px;
     }
 
     .admin-riders-view [data-rider-view="operations"] .admin-records-scroll .table {
@@ -499,6 +524,10 @@ html{
     .admin-riders-view [data-rider-view="operations"] .rider-tool-card,
     .admin-riders-view [data-rider-view="operations"] .rider-tracking-tool {
         grid-template-columns: 1fr;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .active-rider-tools {
+        grid-template-columns: 1fr 1fr;
     }
 
     .admin-riders-view [data-rider-view="operations"] .rider-tool-title {
