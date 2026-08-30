@@ -430,6 +430,80 @@ html{
     .admin-riders-view .admin-records-scroll tbody tr:hover {
         background: #f8faf9;
     }
+
+    /* Divide Active Riders into a records pane and an operations/tracking pane. */
+    .admin-riders-view [data-rider-view="operations"] .admin-records-card > .card-body {
+        display: grid;
+        grid-template-columns: minmax(560px, 1.15fr) minmax(420px, .85fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+        grid-template-areas:
+            "heading heading"
+            "list-title actions"
+            "records tracking";
+        gap: 10px 14px;
+        overflow: hidden;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .active-rider-heading {
+        grid-area: heading;
+        margin-bottom: 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e4e9e6;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .active-rider-tools {
+        grid-area: actions;
+        align-self: start;
+        grid-template-columns: 1fr;
+        margin: 0;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .rider-list-heading {
+        grid-area: list-title;
+        align-self: end;
+        padding: 0 2px;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .admin-records-scroll {
+        grid-area: records;
+        height: 100%;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .admin-live-tracking {
+        grid-area: tracking;
+        min-width: 0;
+        min-height: 0;
+        margin: 0 !important;
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .rider-tool-card {
+        grid-template-columns: minmax(120px, .55fr) minmax(190px, 1fr) auto;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .rider-tracking-tool {
+        grid-template-columns: minmax(150px, 1fr) auto;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .admin-records-scroll .table {
+        min-width: 820px;
+    }
+}
+
+@media (min-width: 801px) and (max-width: 1250px) {
+    .admin-riders-view [data-rider-view="operations"] .admin-records-card > .card-body {
+        grid-template-columns: minmax(480px, 1.05fr) minmax(360px, .95fr);
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .rider-tool-card,
+    .admin-riders-view [data-rider-view="operations"] .rider-tracking-tool {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-riders-view [data-rider-view="operations"] .rider-tool-title {
+        grid-column: auto;
+    }
 }
 
 @media (max-width: 800px) {
