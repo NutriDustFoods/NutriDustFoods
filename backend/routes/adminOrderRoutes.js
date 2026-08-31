@@ -8,6 +8,7 @@ import {
 
 import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
 import { getAdminLiveTracking } from "../controllers/liveTrackingController.js";
+import { exportOrdersExcel, exportOrdersPdf } from "../controllers/orderReportController.js";
 
 
 const router = express.Router();
@@ -31,6 +32,9 @@ router.get(
     requirePermission("orders.view"),
     getAdminOrders
 );
+
+router.get("/reports/excel", requirePermission("orders.view"), exportOrdersExcel);
+router.get("/reports/pdf", requirePermission("orders.view"), exportOrdersPdf);
 
 router.get(
     "/:id/live-location",

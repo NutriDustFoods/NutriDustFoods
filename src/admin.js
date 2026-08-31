@@ -31,6 +31,7 @@ import { AdminStaff, setupAdminStaff } from "./components/AdminStaff.js";
 import { AdminRiders, setupAdminRiders } from "./components/AdminRiders.js";
 import { AdminWithdrawals, setupAdminWithdrawals } from "./components/AdminWithdrawals.js";
 import { AdminOperations, setupAdminOperations } from "./components/AdminOperations.js";
+import { AdminLiveTracking, setupAdminLiveTracking } from "./components/AdminLiveTracking.js";
 
 
 // =====================================================
@@ -56,6 +57,7 @@ const viewPermissions = {
     operations: "operations.view",
     products: "products.view",
     riders: "riders.view",
+    tracking: "riders.view",
     withdrawals: "withdrawals.manage",
     staff: "staff.manage"
 };
@@ -387,7 +389,7 @@ function showAdminDashboard(user) {
     const firstView = Object.keys(viewPermissions).find(allowed);
 
     app.innerHTML = `
-        <div class="admin-workspace">
+        <div class="admin-workspace admin-v2">
             <nav class="admin-taskbar" aria-label="Admin tasks">
                 <div class="admin-taskbar__brand"><span>NutriDust</span><small>${user?.role === "admin" ? "Administrator" : user?.jobRole || "Staff"}</small></div>
                 <div class="admin-nav-label">Workspace</div>
@@ -396,6 +398,7 @@ function showAdminDashboard(user) {
                     ${button("operations", "bi-speedometer2", "Overview", firstView === "operations")}
                     ${button("products", "bi-box-seam", "Products & Stock", firstView === "products")}
                     ${button("riders", "bi-bicycle", "Riders", firstView === "riders")}
+                    ${button("tracking", "bi-geo-alt", "Live Tracking", firstView === "tracking")}
                     ${button("withdrawals", "bi-wallet2", "Withdrawals", firstView === "withdrawals")}
                     ${button("staff", "bi-people", "Staff", firstView === "staff")}
                 </div>
@@ -404,12 +407,13 @@ function showAdminDashboard(user) {
                 <button class="admin-sidebar-logout" id="workspaceLogout"><i class="bi bi-box-arrow-right"></i><span>Log out</span></button>
             </nav>
             <div class="admin-main-shell">
-                <header class="admin-topbar"><div><span class="admin-topbar-kicker">NutriDust Foods</span><strong id="adminCurrentSection">Dashboard</strong></div><div class="admin-topbar-actions"><button type="button" aria-label="Search"><i class="bi bi-search"></i></button><button type="button" aria-label="Notifications"><i class="bi bi-bell"></i><span></span></button><div class="admin-profile-avatar">${safeInitials(user?.fullName || user?.username || "Admin")}</div><div class="admin-profile-copy"><strong>${user?.fullName || user?.username || "NutriDust Admin"}</strong><small>${user?.role === "admin" ? "Administrator" : user?.jobRole || "Staff"}</small></div></div></header>
+                <header class="admin-topbar"><div><span class="admin-topbar-kicker">NutriDust Foods</span><strong id="adminCurrentSection">Dashboard</strong></div><div class="admin-topbar-actions"><button id="adminGlobalSearch" type="button" aria-label="Search orders" title="Search orders"><i class="bi bi-search"></i></button><button id="adminNotifications" type="button" aria-label="Show pending notifications" title="Show pending orders"><i class="bi bi-bell"></i><span></span></button><div class="admin-profile-avatar">${safeInitials(user?.fullName || user?.username || "Admin")}</div><div class="admin-profile-copy"><strong>${user?.fullName || user?.username || "NutriDust Admin"}</strong><small>${user?.role === "admin" ? "Administrator" : user?.jobRole || "Staff"}</small></div></div></header>
                 <main class="admin-view-stack">
                     ${view("orders", AdminDashboard())}
                     ${view("operations", AdminOperations())}
                     ${view("products", AdminProducts())}
                     ${view("riders", AdminRiders())}
+                    ${view("tracking", AdminLiveTracking())}
                     ${view("withdrawals", AdminWithdrawals())}
                     ${view("staff", AdminStaff())}
                 </main>
@@ -431,6 +435,9 @@ function showAdminDashboard(user) {
         window.addEventListener("resize",measureTaskbar,{passive:true});
     }
     setupAdminWorkspaceNavigation(firstView);
+    const openOrders=()=>document.querySelector('[data-admin-target="orders"]')?.click();
+    document.getElementById("adminGlobalSearch")?.addEventListener("click",()=>{openOrders();requestAnimationFrame(()=>{const search=document.getElementById("orderSearch");search?.focus();search?.scrollIntoView({block:"nearest"});});});
+    document.getElementById("adminNotifications")?.addEventListener("click",()=>{openOrders();requestAnimationFrame(()=>{const payment=document.getElementById("paymentFilter");if(payment){payment.value="pending";payment.dispatchEvent(new Event("change",{bubbles:true}));payment.focus();}document.querySelector(".admin-orders-list")?.scrollIntoView({block:"nearest"});});});
     document.getElementById("workspaceLogout")?.addEventListener("click",()=>{if(window.confirm("Log out of the NutriDust admin dashboard?")){clearAdminSession();showLoginPage();}});
 
 }
@@ -438,7 +445,7 @@ function showAdminDashboard(user) {
 function setupAdminWorkspaceNavigation(defaultView = "orders") {
     const buttons=[...document.querySelectorAll("[data-admin-target]")],views=[...document.querySelectorAll("[data-admin-view]")];
     const valid=new Set(views.map(view=>view.dataset.adminView));
-    const labels={orders:"Orders",operations:"Operations overview",products:"Products & stock",riders:"Rider management",withdrawals:"Withdrawals",staff:"Staff access"};
+    const labels={orders:"Orders",operations:"Operations overview",products:"Products & stock",riders:"Rider management",tracking:"Live tracking",withdrawals:"Withdrawals",staff:"Staff access"};
     const show=name=>{
         const selected=valid.has(name)?name:defaultView;
         views.forEach(view=>view.hidden=view.dataset.adminView!==selected);
@@ -568,6 +575,7 @@ async function initAdmin() {
     if (can("products.view", user)) setupAdminProducts();
     if (can("staff.manage", user)) await setupAdminStaff();
     if (can("riders.view", user)) await setupAdminRiders();
+    if (can("riders.view", user)) setupAdminLiveTracking();
     if (can("withdrawals.manage", user)) await setupAdminWithdrawals();
 
 

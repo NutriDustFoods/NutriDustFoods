@@ -278,7 +278,11 @@ export function AdminDashboard() {
                                 </option>
 
                                 <option value="pending">
-                                    Pending
+                                    Unpaid / Pending
+                                </option>
+
+                                <option value="failed">
+                                    Failed
                                 </option>
 
                             </select>
@@ -321,6 +325,10 @@ export function AdminDashboard() {
                                     Cancelled
                                 </option>
 
+                                <option value="failed">
+                                    Failed
+                                </option>
+
                             </select>
 
                         </div>
@@ -338,18 +346,17 @@ export function AdminDashboard() {
 
                 <div class="card-body">
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-3 admin-orders-list-heading">
 
                         <h4 class="fw-bold mb-0">
                             Orders
                         </h4>
 
-                        <span
-                            id="ordersCount"
-                            class="badge bg-dark"
-                        >
-                            0 Orders
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-success" id="exportOrdersExcelButton"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="exportOrdersPdfButton"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+                            <span id="ordersCount" class="badge bg-dark">0 Orders</span>
+                        </div>
 
                     </div>
 
@@ -1517,6 +1524,18 @@ function applyAdminOrderFilters() {
     renderOrders(filtered);
 }
 
+async function downloadOrderReport(format) {
+    if (!['excel','pdf'].includes(format)) return;
+    const button=document.getElementById(format==='excel'?'exportOrdersExcelButton':'exportOrdersPdfButton'),original=button?.innerHTML;
+    if(button){button.disabled=true;button.innerHTML='<span class="spinner-border spinner-border-sm"></span>';}
+    try {
+        const params={search:document.getElementById('orderSearch')?.value||'',payment:document.getElementById('paymentFilter')?.value||'all',status:document.getElementById('statusFilter')?.value||'all'};
+        const response=await API.get(`/admin/orders/reports/${format}`,{params,responseType:'blob'}),url=URL.createObjectURL(response.data),link=document.createElement('a');
+        link.href=url;link.download=`nutridust-orders-${new Date().toISOString().slice(0,10)}.${format==='excel'?'xlsx':'pdf'}`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+    } catch { window.alert(`Unable to export the ${format==='excel'?'Excel':'PDF'} order report. Please try again.`); }
+    finally { if(button){button.disabled=false;button.innerHTML=original;} }
+}
+
 export function setupAdminFilters() {
 
     const search =
@@ -1553,6 +1572,9 @@ export function setupAdminFilters() {
         "change",
         applyAdminOrderFilters
     );
+
+    document.getElementById("exportOrdersExcelButton")?.addEventListener("click",()=>downloadOrderReport("excel"));
+    document.getElementById("exportOrdersPdfButton")?.addEventListener("click",()=>downloadOrderReport("pdf"));
 
 }
 

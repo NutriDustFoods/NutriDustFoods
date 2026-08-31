@@ -21,11 +21,22 @@ const applicationView = row => ({
 export const submitRiderApplication = async (req, res) => {
     const { firstName, middleName, surname, phone, email, plateNumber, vehicleType = "Motorcycle" } = req.body || {};
     const normalizedEmail = cleanEmail(email), normalizedPhone = cleanPhone(phone);
+    const normalizedPlate = String(plateNumber || "").trim().toUpperCase().replace(/\s+/g, "");
     if (!firstName || !surname || !normalizedPhone || !normalizedEmail || !plateNumber) return res.status(400).json({ success:false, message:"First name, surname, phone, email and plate number are required." });
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) return res.status(400).json({ success:false, message:"Enter a valid email address." });
     if (!req.files?.ownershipDocument?.[0]) return res.status(400).json({ success:false, message:"Proof of vehicle ownership is required." });
-    const duplicate = db.prepare("SELECT 1 FROM rider_applications WHERE phone=? OR email=? UNION SELECT 1 FROM riders WHERE phone=? OR lower(email)=?").get(normalizedPhone, normalizedEmail, normalizedPhone, normalizedEmail);
-    if (duplicate) return res.status(409).json({ success:false, message:"This phone number or email already has a rider registration." });
+    const existingRider = db.prepare("SELECT id FROM riders WHERE phone=? OR lower(email)=? OR upper(replace(vehicle_registration_number,' ',''))=?").get(normalizedPhone, normalizedEmail, normalizedPlate);
+    if (existingRider) return res.status(409).json({ success:false, message:"This phone number, email address or vehicle is already registered to a rider account." });
+    const existingApplication = db.prepare("SELECT * FROM rider_applications WHERE phone=? OR lower(email)=? OR upper(replace(plate_number,' ',''))=? ORDER BY id DESC LIMIT 1").get(normalizedPhone, normalizedEmail, normalizedPlate);
+    if (existingApplication) {
+        const stillPending = !["approved", "rejected"].includes(existingApplication.application_status);
+        return res.status(stillPending ? 200 : 409).json({
+            success: stillPending, alreadySubmitted: stillPending,
+            message: stillPending ? "Your rider application was already submitted successfully and is awaiting review. Please do not submit it again." : "An application already exists for this phone number, email address or vehicle.",
+            trackingCode: existingApplication.tracking_code, applicationId: existingApplication.id,
+            applicationStatus: existingApplication.application_status
+        });
+    }
 
     try {
         const trackingCode = `NDR-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
@@ -36,10 +47,11 @@ export const submitRiderApplication = async (req, res) => {
             (tracking_code,first_name,middle_name,surname,phone,email,vehicle_type,plate_number,driving_license_path,ownership_document_path,application_status)
             VALUES(?,?,?,?,?,?,?,?,?,?,'pending_review')`).run(
                 trackingCode, String(firstName).trim(), middleName ? String(middleName).trim() : null, String(surname).trim(),
-                normalizedPhone, normalizedEmail, String(vehicleType).trim(), String(plateNumber).trim().toUpperCase(), licensePath, ownershipPath
+                normalizedPhone, normalizedEmail, String(vehicleType).trim(), normalizedPlate, licensePath, ownershipPath
             );
         const applicationId = Number(result.lastInsertRowid);
-        await alertNewRiderApplication({ id:applicationId, firstName:String(firstName).trim(), surname:String(surname).trim(), phone:normalizedPhone, email:normalizedEmail, vehicleType:String(vehicleType).trim(), plateNumber:String(plateNumber).trim().toUpperCase(), trackingCode });
+        void alertNewRiderApplication({ id:applicationId, firstName:String(firstName).trim(), surname:String(surname).trim(), phone:normalizedPhone, email:normalizedEmail, vehicleType:String(vehicleType).trim(), plateNumber:normalizedPlate, trackingCode })
+            .catch(alertError => console.error("New rider application alert failed:", alertError.message));
         return res.status(201).json({ success:true, message:"Application received. NutriDust will review your details and documents.", trackingCode, applicationId });
     } catch (error) {
         return res.status(500).json({ success:false, message:error.message || "Unable to submit rider application." });

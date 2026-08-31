@@ -55,7 +55,8 @@ const serializeTracking = (row, audience) => {
     const active = ACTIVE_STATUSES.has(row.delivery_status);
     const visible = audience === "admin" ? active : CUSTOMER_VISIBLE_STATUSES.has(row.delivery_status);
     const updatedMs = parseUtc(row.location_updated_at);
-    const locationFresh = Number.isFinite(updatedMs) && Date.now() - updatedMs <= 2 * 60 * 1000;
+    const locationAgeSeconds = Number.isFinite(updatedMs) ? Math.max(0, Math.round((Date.now() - updatedMs) / 1000)) : null;
+    const locationFresh = locationAgeSeconds !== null && locationAgeSeconds <= 20;
     const hasLocation = Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude));
 
     return {
@@ -68,6 +69,8 @@ const serializeTracking = (row, audience) => {
         trackingVisible: visible,
         trackingAvailable: Boolean(visible && hasLocation),
         locationFresh,
+        locationAgeSeconds,
+        serverTime: new Date().toISOString(),
         rider: row.rider_id ? {
             id: audience === "admin" ? row.rider_id : undefined,
             name: row.rider_name,

@@ -30,9 +30,10 @@ export function liveTrackingMarkup(tracking) {
     }
 
     const updated = tracking.location.updatedAt
-        ? new Date(`${String(tracking.location.updatedAt).replace(" ", "T")}Z`).toLocaleString()
+        ? new Date(`${String(tracking.location.updatedAt).replace(" ", "T")}Z`).toLocaleTimeString()
         : "Unknown";
     const accuracy = tracking.location.accuracy ? ` · accuracy about ${Math.round(tracking.location.accuracy)} m` : "";
+    const age = Number.isFinite(Number(tracking.locationAgeSeconds)) ? `${Number(tracking.locationAgeSeconds)} seconds ago` : updated;
 
     return `
         <div class="live-tracking-card">
@@ -52,7 +53,7 @@ export function liveTrackingMarkup(tracking) {
                 <div class="live-tracking-details">
                     <strong><i class="bi bi-broadcast-pin me-2"></i>${tracking.locationFresh ? "Receiving live GPS" : "Waiting for a fresh GPS update"}</strong>
                     <p>${tracking.locationFresh ? "This position refreshes automatically while the Rider App is open and location is enabled." : "Ask the rider to open the Rider App, switch availability on, enable phone Location, and allow precise location access."}</p>
-                    <small>Updated ${safe(updated)}${safe(accuracy)}</small>
+                    <small><strong>GPS updated ${safe(age)}</strong> · ${safe(updated)}${safe(accuracy)}</small>
                 </div>
             </div>
         </div>

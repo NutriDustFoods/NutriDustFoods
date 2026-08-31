@@ -1463,7 +1463,9 @@ for (
 
             processSuccessfulPayment();
 
-            autoAssignPaidOrder(order.id);
+            if (String(process.env.AUTO_ASSIGN_RIDERS || "false").toLowerCase() === "true") {
+                autoAssignPaidOrder(order.id);
+            }
 
 
         } catch (inventoryError) {

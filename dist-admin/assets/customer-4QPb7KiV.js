@@ -1,4 +1,4 @@
-import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSdGq.js";var r=`/assets/logo-wRHrwKOg.png`,i=e.create({baseURL:`https://nutridustfoods.onrender.com/api`}),a=`nutridust-customer-token`,o=`nutridust-customer`,s=()=>localStorage.getItem(a),c=()=>{let e=localStorage.getItem(o);if(!e)return null;try{return JSON.parse(e)}catch(e){return console.error(`❌ Invalid saved customer data:`,e),null}},l=e=>{e?.token&&localStorage.setItem(a,e.token),e?.customer&&localStorage.setItem(o,JSON.stringify(e.customer))},u=()=>{localStorage.removeItem(a),localStorage.removeItem(o),console.log(`👋 Customer logged out.`)};i.interceptors.request.use(e=>{let t=s();return t&&(e.headers=e.headers||{},e.headers.Authorization=`Bearer ${t}`),e},e=>Promise.reject(e)),i.interceptors.response.use(e=>e,e=>(e?.response?.status===401&&(console.warn(`🔐 Customer authentication expired or is invalid.`),u()),Promise.reject(e)));var d=async e=>{let{data:t}=await i.post(`/auth/signup`,e);return t?.success&&t?.token&&l(t),t},f=async(e,t)=>{let{data:n}=await i.post(`/auth/login`,{email:e,password:t});return n?.success&&n?.token&&l(n),n},p=async()=>{let{data:e}=await i.get(`/auth/me`);return e?.success&&e?.customer&&localStorage.setItem(o,JSON.stringify(e.customer)),e},m=async()=>{let{data:e}=await i.get(`/products`);return e},h=async e=>{let t={deliveryAddress:e?.deliveryAddress||``,fulfillmentType:e?.fulfillmentType||`delivery`,items:Array.isArray(e?.items)?e.items:[]},{data:n}=await i.post(`/orders`,t);return n},g=async e=>{let{data:t}=await i.post(`/orders/delivery-quote`,{deliveryAddress:e});return t.quote},_=async()=>{let{data:e}=await i.get(`/orders/my`);return e},ee=async e=>{let{data:t}=await i.post(`/payments/initialize`,{orderId:e});return t},v=async e=>{let{data:t}=await i.get(`/payments/verify/${encodeURIComponent(e)}`);return t},y=async e=>{if(!e)throw Error(`Order number is required.`);let{data:t}=await i.get(`/orders/${encodeURIComponent(e)}`);return t},b=`nutridust-customer-avatar`;function x(){try{return localStorage.getItem(b)}catch(e){return console.error(`❌ Unable to read customer avatar:`,e),null}}function S(e){if(e)try{localStorage.setItem(b,e),console.log(`🖼️ Customer avatar saved.`)}catch(e){console.error(`❌ Unable to save customer avatar:`,e)}}function C(){try{localStorage.removeItem(b)}catch(e){console.error(`❌ Unable to remove customer avatar:`,e)}}function te(){return`
+import{t as e}from"./axios-_aN4D4J9.js";import{a as t,i as n,n as r}from"./liveTrackingMap-LZgxnnmp.js";var i=`/assets/logo-wRHrwKOg.png`,a=e.create({baseURL:`https://nutridustfoods.onrender.com/api`}),o=`nutridust-customer-token`,s=`nutridust-customer`,c=()=>localStorage.getItem(o),l=()=>{let e=localStorage.getItem(s);if(!e)return null;try{return JSON.parse(e)}catch(e){return console.error(`❌ Invalid saved customer data:`,e),null}},u=e=>{e?.token&&localStorage.setItem(o,e.token),e?.customer&&localStorage.setItem(s,JSON.stringify(e.customer))},d=()=>{localStorage.removeItem(o),localStorage.removeItem(s),console.log(`👋 Customer logged out.`)};a.interceptors.request.use(e=>{let t=c();return t&&(e.headers=e.headers||{},e.headers.Authorization=`Bearer ${t}`),e},e=>Promise.reject(e)),a.interceptors.response.use(e=>e,e=>(e?.response?.status===401&&(console.warn(`🔐 Customer authentication expired or is invalid.`),d()),Promise.reject(e)));var f=async e=>{let{data:t}=await a.post(`/auth/signup`,e);return t?.success&&t?.token&&u(t),t},ee=async(e,t)=>{let{data:n}=await a.post(`/auth/login`,{email:e,password:t});return n?.success&&n?.token&&u(n),n},p=async()=>{let{data:e}=await a.get(`/auth/me`);return e?.success&&e?.customer&&localStorage.setItem(s,JSON.stringify(e.customer)),e},m=async()=>{let{data:e}=await a.get(`/products`);return e},h=async e=>{let t={deliveryAddress:e?.deliveryAddress||``,fulfillmentType:e?.fulfillmentType||`delivery`,items:Array.isArray(e?.items)?e.items:[]},{data:n}=await a.post(`/orders`,t);return n},g=async e=>{let{data:t}=await a.post(`/orders/delivery-quote`,{deliveryAddress:e});return t.quote},_=async()=>{let{data:e}=await a.get(`/orders/my`);return e},te=async e=>{if(!e)throw Error(`Order number is required.`);let{data:t}=await a.get(`/orders/${encodeURIComponent(e)}/live-location`);return t},ne=async e=>{let{data:t}=await a.post(`/payments/initialize`,{orderId:e});return t},re=async e=>{let{data:t}=await a.get(`/payments/verify/${encodeURIComponent(e)}`);return t},v=async e=>{if(!e)throw Error(`Order number is required.`);let{data:t}=await a.get(`/orders/${encodeURIComponent(e)}`);return t},y=`nutridust-customer-avatar`;function ie(){try{return localStorage.getItem(y)}catch(e){return console.error(`❌ Unable to read customer avatar:`,e),null}}function ae(e){if(e)try{localStorage.setItem(y,e),console.log(`🖼️ Customer avatar saved.`)}catch(e){console.error(`❌ Unable to save customer avatar:`,e)}}function oe(){try{localStorage.removeItem(y)}catch(e){console.error(`❌ Unable to remove customer avatar:`,e)}}function se(){return`
 
         <!-- =================================================
              CUSTOMER AUTH MODAL
@@ -392,7 +392,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
         </div>
 
-    `}function ne(){console.log(`🔐 Initializing customer authentication...`);let e=document.getElementById(`customerAuthModal`),t=document.getElementById(`customerLoginForm`),r=document.getElementById(`customerSignupForm`),i=document.getElementById(`customerSubmitLoginButton`),a=document.getElementById(`customerSignupButton`),o=document.getElementById(`customerAuthSwitch`),s=document.getElementById(`customerAuthTitle`),l=document.getElementById(`customerLoginMessage`),u=document.getElementById(`customerSignupMessage`),p=document.getElementById(`customerSignupAvatar`),m=document.getElementById(`customerAvatarPreview`);if(!e){console.error(`❌ customerAuthModal was not found.`);return}if(!t||!r){console.error(`❌ Customer authentication forms were not found.`);return}console.log(`✅ Customer authentication elements found.`);let h=n.getOrCreateInstance(e);p&&p.addEventListener(`change`,e=>{let t=e.target.files?.[0];if(!t)return;if(!t.type.startsWith(`image/`)){u.innerHTML=`
+    `}function ce(){console.log(`🔐 Initializing customer authentication...`);let e=document.getElementById(`customerAuthModal`),t=document.getElementById(`customerLoginForm`),r=document.getElementById(`customerSignupForm`),i=document.getElementById(`customerSubmitLoginButton`),a=document.getElementById(`customerSignupButton`),o=document.getElementById(`customerAuthSwitch`),s=document.getElementById(`customerAuthTitle`),c=document.getElementById(`customerLoginMessage`),u=document.getElementById(`customerSignupMessage`),d=document.getElementById(`customerSignupAvatar`),p=document.getElementById(`customerAvatarPreview`);if(!e){console.error(`❌ customerAuthModal was not found.`);return}if(!t||!r){console.error(`❌ Customer authentication forms were not found.`);return}console.log(`✅ Customer authentication elements found.`);let m=n.getOrCreateInstance(e);d&&d.addEventListener(`change`,e=>{let t=e.target.files?.[0];if(!t)return;if(!t.type.startsWith(`image/`)){u.innerHTML=`
 
                         <div class="alert alert-warning py-2">
 
@@ -400,7 +400,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                         </div>
 
-                    `,p.value=``;return}if(t.size>5242880){u.innerHTML=`
+                    `,d.value=``;return}if(t.size>5242880){u.innerHTML=`
 
                         <div class="alert alert-warning py-2">
 
@@ -408,7 +408,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                         </div>
 
-                    `,p.value=``;return}let n=new FileReader;n.onload=()=>{let e=n.result;m&&(m.innerHTML=`
+                    `,d.value=``;return}let n=new FileReader;n.onload=()=>{let e=n.result;p&&(p.innerHTML=`
 
                                 <img
                                     src="${e}"
@@ -419,7 +419,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
                                     "
                                 >
 
-                            `),p.dataset.avatar=e},n.onerror=()=>{console.error(`❌ Unable to read profile picture.`)},n.readAsDataURL(t)}),t.addEventListener(`submit`,async e=>{e.preventDefault(),console.log(`🔐 Customer login submitted.`);let t=document.getElementById(`customerLoginEmail`).value.trim(),n=document.getElementById(`customerLoginPassword`).value;if(!t||!n){l.innerHTML=`
+                            `),d.dataset.avatar=e},n.onerror=()=>{console.error(`❌ Unable to read profile picture.`)},n.readAsDataURL(t)}),t.addEventListener(`submit`,async e=>{e.preventDefault(),console.log(`🔐 Customer login submitted.`);let t=document.getElementById(`customerLoginEmail`).value.trim(),n=document.getElementById(`customerLoginPassword`).value;if(!t||!n){c.innerHTML=`
 
                     <div class="alert alert-warning py-2">
 
@@ -435,7 +435,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                 Logging in...
 
-            `,l.innerHTML=``;try{console.log(`📡 Sending customer login request...`);let e=await f(t,n);if(console.log(`✅ Login response:`,e),!e||!e.success||!e.token)throw Error(e?.message||`Login failed.`);console.log(`🔐 JWT saved:`,!!localStorage.getItem(`nutridust-customer-token`)),console.log(`👤 Customer saved:`,c()),l.innerHTML=`
+            `,c.innerHTML=``;try{console.log(`📡 Sending customer login request...`);let e=await ee(t,n);if(console.log(`✅ Login response:`,e),!e||!e.success||!e.token)throw Error(e?.message||`Login failed.`);console.log(`🔐 JWT saved:`,!!localStorage.getItem(`nutridust-customer-token`)),console.log(`👤 Customer saved:`,l()),c.innerHTML=`
 
                     <div class="alert alert-success py-2">
 
@@ -445,7 +445,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                     </div>
 
-                `,setTimeout(()=>{h.hide(),window.location.reload()},500)}catch(e){console.error(`❌ Customer login error:`,e);let t=e?.response?.data?.message||e?.message||`Unable to login.`;l.innerHTML=`
+                `,setTimeout(()=>{m.hide(),window.location.reload()},500)}catch(e){console.error(`❌ Customer login error:`,e);let t=e?.response?.data?.message||e?.message||`Unable to login.`;c.innerHTML=`
 
                     <div class="alert alert-danger py-2">
 
@@ -483,7 +483,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                 Creating Account...
 
-            `,u.innerHTML=``;try{let e=await d({name:t,email:n,phone:r,password:i});if(console.log(`✅ Signup response:`,e),!e||!e.success)throw Error(e?.message||`Unable to create account.`);let a=p?.dataset?.avatar;if(a&&S(a),u.innerHTML=`
+            `,u.innerHTML=``;try{let e=await f({name:t,email:n,phone:r,password:i});if(console.log(`✅ Signup response:`,e),!e||!e.success)throw Error(e?.message||`Unable to create account.`);let a=d?.dataset?.avatar;if(a&&ae(a),u.innerHTML=`
 
                     <div class="alert alert-success py-2">
 
@@ -493,7 +493,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                     </div>
 
-                `,e.token){console.log(`🔐 Signup JWT saved.`),setTimeout(()=>{h.hide(),window.location.reload()},700);return}setTimeout(()=>{_()},900)}catch(e){console.error(`❌ Customer signup error:`,e);let t=e?.response?.data?.message||e?.message||`Unable to create account.`;u.innerHTML=`
+                `,e.token){console.log(`🔐 Signup JWT saved.`),setTimeout(()=>{m.hide(),window.location.reload()},700);return}setTimeout(()=>{g()},900)}catch(e){console.error(`❌ Customer signup error:`,e);let t=e?.response?.data?.message||e?.message||`Unable to create account.`;u.innerHTML=`
 
                     <div class="alert alert-danger py-2">
 
@@ -507,7 +507,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
                     Create Account
 
-                `}});let g=()=>{t.style.display=`none`,r.style.display=`block`,s.textContent=`Create Customer Account`,o.textContent=`Already have an account? Login`,l.innerHTML=``,u.innerHTML=``},_=()=>{r.style.display=`none`,t.style.display=`block`,s.textContent=`Customer Login`,o.textContent=`Don't have an account? Sign Up`,l.innerHTML=``,u.innerHTML=``};o.addEventListener(`click`,e=>{e.preventDefault(),t.style.display===`none`?_():g()}),console.log(`✅ Customer authentication initialized.`)}function re(){let e=c(),t=!!(s()&&e),n=e?.name||`Customer`,i=n.charAt(0).toUpperCase(),a=x(),o=a?`
+                `}});let h=()=>{t.style.display=`none`,r.style.display=`block`,s.textContent=`Create Customer Account`,o.textContent=`Already have an account? Login`,c.innerHTML=``,u.innerHTML=``},g=()=>{r.style.display=`none`,t.style.display=`block`,s.textContent=`Customer Login`,o.textContent=`Don't have an account? Sign Up`,c.innerHTML=``,u.innerHTML=``};o.addEventListener(`click`,e=>{e.preventDefault(),t.style.display===`none`?g():h()}),console.log(`✅ Customer authentication initialized.`)}function le(){let e=l(),t=!!(c()&&e),n=e?.name||`Customer`,r=n.charAt(0).toUpperCase(),a=ie(),o=a?`
 
                 <img
                     src="${a}"
@@ -544,7 +544,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
                     "
                 >
 
-                    ${i}
+                    ${r}
 
                 </div>
 
@@ -577,7 +577,7 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
         >
 
             <img
-                src="${r}"
+                src="${i}"
                 alt="NutriDust Foods"
                 class="navbar-logo me-3"
             >
@@ -984,7 +984,15 @@ import{t as e}from"./axios-_aN4D4J9.js";import{n as t,t as n}from"./style-DJukSd
 
 </nav>
 
-    `}function ie(){console.log(`👤 Initializing customer navbar...`);let e=document.getElementById(`customerLoginButton`);e&&e.addEventListener(`click`,()=>{let e=document.getElementById(`customerAuthModal`);if(!e){console.error(`❌ Customer auth modal not found.`);return}n.getOrCreateInstance(e).show()});let t=document.getElementById(`customerLogoutButton`);t&&t.addEventListener(`click`,()=>{window.confirm(`Are you sure you want to logout?`)&&(u(),C(),console.log(`👋 Customer logged out.`),window.location.reload())});let r=document.getElementById(`customerProfileButton`);r&&r.addEventListener(`click`,e=>{e.preventDefault();let t=document.getElementById(`customerProfileModal`);t&&n.getOrCreateInstance(t).show()});let i=document.getElementById(`customerOrdersButton`);i&&i.addEventListener(`click`,e=>{e.preventDefault();let t=document.getElementById(`customerOrdersModal`);t&&n.getOrCreateInstance(t).show()}),window.addEventListener(`nutridust:open-orders`,()=>{let e=document.getElementById(`customerProfileModal`);e&&n.getInstance(e)?.hide();let t=document.getElementById(`customerOrdersModal`);t&&n.getOrCreateInstance(t).show()}),console.log(`✅ Customer navbar initialized.`)}function ae(){return`
+<nav class="customer-mobile-nav" aria-label="Customer app navigation">
+    <a href="#" class="active" data-customer-mobile-tab="home"><i class="bi bi-house-door"></i><span>Home</span></a>
+    <a href="#products" data-customer-mobile-tab="products"><i class="bi bi-grid"></i><span>Shop</span></a>
+    <button type="button" id="mobileCartButton"><i class="bi bi-cart3"></i><span>Cart</span></button>
+    <button type="button" id="mobileOrdersButton"><i class="bi bi-box-seam"></i><span>Orders</span></button>
+    <button type="button" id="mobileAccountButton"><i class="bi bi-person"></i><span>Account</span></button>
+</nav>
+
+    `}function ue(){console.log(`👤 Initializing customer navbar...`),document.getElementById(`mobileCartButton`)?.addEventListener(`click`,()=>{document.getElementById(`cartButton`)?.click()}),document.getElementById(`mobileOrdersButton`)?.addEventListener(`click`,()=>{document.getElementById(`customerOrdersButton`)?window.dispatchEvent(new CustomEvent(`nutridust:open-orders`)):document.getElementById(`customerLoginButton`)?.click()}),document.getElementById(`mobileAccountButton`)?.addEventListener(`click`,()=>{let e=document.getElementById(`customerProfileButton`);e?e.click():document.getElementById(`customerLoginButton`)?.click()}),document.querySelectorAll(`[data-customer-mobile-tab]`).forEach(e=>{e.addEventListener(`click`,()=>{document.querySelectorAll(`[data-customer-mobile-tab]`).forEach(e=>e.classList.remove(`active`)),e.classList.add(`active`)})});let e=document.getElementById(`customerLoginButton`);e&&e.addEventListener(`click`,()=>{let e=document.getElementById(`customerAuthModal`);if(!e){console.error(`❌ Customer auth modal not found.`);return}n.getOrCreateInstance(e).show()});let t=document.getElementById(`customerLogoutButton`);t&&t.addEventListener(`click`,()=>{window.confirm(`Are you sure you want to logout?`)&&(d(),oe(),console.log(`👋 Customer logged out.`),window.location.reload())});let r=document.getElementById(`customerProfileButton`);r&&r.addEventListener(`click`,e=>{e.preventDefault();let t=document.getElementById(`customerProfileModal`);t&&n.getOrCreateInstance(t).show()});let i=document.getElementById(`customerOrdersButton`);i&&i.addEventListener(`click`,e=>{e.preventDefault();let t=document.getElementById(`customerOrdersModal`);t&&n.getOrCreateInstance(t).show()}),window.addEventListener(`nutridust:open-orders`,()=>{let e=document.getElementById(`customerProfileModal`);e&&n.getInstance(e)?.hide();let t=document.getElementById(`customerOrdersModal`);t&&n.getOrCreateInstance(t).show()}),console.log(`✅ Customer navbar initialized.`)}function de(){return`
 
 <section class="hero d-flex align-items-center">
 
@@ -1028,7 +1036,7 @@ Premium Jerky • Fruit Powders • Baby Foods • Healthy Snacks
 
 </section>
 
-`}function oe(){return`
+`}function fe(){return`
 
 <section class="py-5 bg-dark">
 
@@ -1146,7 +1154,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
 </section>
 
-`}function se(e){let t=``;for(let n=1;n<=5;n++)t+=n<=e?`<i class="bi bi-star-fill text-warning"></i>`:`<i class="bi bi-star text-warning"></i>`;return t}var ce=`https://nutridustfoods.onrender.com`;function le(e){return e?e.startsWith(`http://`)||e.startsWith(`https://`)?e:`${ce}${e}`:``}function w(e){let t=Number(e.quantityAvailable??0);return t<=0?`
+`}function pe(e){let t=``;for(let n=1;n<=5;n++)t+=n<=e?`<i class="bi bi-star-fill text-warning"></i>`:`<i class="bi bi-star text-warning"></i>`;return t}var me=`https://nutridustfoods.onrender.com`;function he(e){return e?e.startsWith(`http://`)||e.startsWith(`https://`)?e:`${me}${e}`:``}function b(e){let t=Number(e.quantityAvailable??0);return t<=0?`
 
             <div
                 class="alert alert-danger py-2 px-3 mb-3"
@@ -1200,7 +1208,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
         </div>
 
-    `}async function ue(){let e=await m();return console.log(`Customer products:`,e),`
+    `}async function x(){let e=await m();return console.log(`Customer products:`,e),`
 
         <section
             id="products"
@@ -1239,7 +1247,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
                 <div class="row g-4">
 
-                    ${e.map(e=>{let t=le(e.image),n=Number(e.quantityAvailable??0)<=0;return`
+                    ${e.map(e=>{let t=he(e.image),n=Number(e.quantityAvailable??0)<=0;return`
 
                 <div class="col-lg-4 col-md-6">
 
@@ -1351,7 +1359,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
                             <div class="mb-3">
 
-                                ${se(e.rating)}
+                                ${pe(e.rating)}
 
                             </div>
 
@@ -1380,7 +1388,7 @@ Proudly producing premium nutrition for Africa and the global market.
                             <!-- STOCK -->
                             <!-- ================================================= -->
 
-                            <div data-product-stock>${w(e)}</div>
+                            <div data-product-stock>${b(e)}</div>
 
 
                             <!-- ================================================= -->
@@ -1433,7 +1441,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
         </section>
 
-    `}async function de(){(await m()).forEach(e=>{let t=document.querySelector(`[data-product-card="${e.id}"]`);if(!t)return;let n=t.querySelector(`[data-product-stock]`),r=w(e);n&&n.innerHTML!==r&&(n.innerHTML=r);let i=t.querySelector(`[data-product-price]`),a=`₦${Number(e.price||0).toLocaleString()}`;i&&i.textContent.trim()!==a&&(i.textContent=a);let o=t.querySelector(`.add-to-cart`),s=Number(e.quantityAvailable??0)<=0;o&&(o.disabled=s,o.innerHTML=s?`Out of Stock`:`<i class="bi bi-cart-plus"></i> Add to Cart`)})}function fe(){return`
+    `}async function S(){(await m()).forEach(e=>{let t=document.querySelector(`[data-product-card="${e.id}"]`);if(!t)return;let n=t.querySelector(`[data-product-stock]`),r=b(e);n&&n.innerHTML!==r&&(n.innerHTML=r);let i=t.querySelector(`[data-product-price]`),a=`₦${Number(e.price||0).toLocaleString()}`;i&&i.textContent.trim()!==a&&(i.textContent=a);let o=t.querySelector(`.add-to-cart`),s=Number(e.quantityAvailable??0)<=0;o&&(o.disabled=s,o.innerHTML=s?`Out of Stock`:`<i class="bi bi-cart-plus"></i> Add to Cart`)})}function ge(){return`
 
 <section class="py-5 bg-warning">
 
@@ -1479,7 +1487,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
 </section>
 
-`}function pe(){return`
+`}function _e(){return`
 
 <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
 
@@ -1603,7 +1611,7 @@ Proudly producing premium nutrition for Africa and the global market.
 
 </div>
 
-`}function me(){return`
+`}function ve(){return`
 
 <section class="py-5 bg-black">
 
@@ -1637,7 +1645,7 @@ placeholder="Search NutriDust products...">
 
 </section>
 
-`}function he(){return`
+`}function ye(){return`
 
 <section class="py-3 bg-black">
 
@@ -1677,7 +1685,7 @@ Nutrition
 
 </section>
 
-`}function ge(){return`
+`}function be(){return`
 
 <div
     id="cart"
@@ -1767,7 +1775,7 @@ Nutrition
 
 </div>
 
-`}function T(){return`
+`}function xe(){return`
 
 <div
 class="modal fade"
@@ -1932,7 +1940,7 @@ Continue to Payment
 
 </div>
 
-`}function E(){return`
+`}function Se(){return`
         <div
             class="modal fade"
             id="paymentSuccessModal"
@@ -2011,7 +2019,7 @@ Continue to Payment
                 </div>
             </div>
         </div>
-    `}function D(){return`
+    `}function Ce(){return`
         <section
             id="trackOrderSection"
             class="container py-5"
@@ -2096,7 +2104,80 @@ Continue to Payment
             </div>
 
         </section>
-    `}var O=e=>String(e??``).replace(/[&<>'"]/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,"'":`&#39;`,'"':`&quot;`})[e]);function k(){return`<div class="modal fade" id="customerProfileModal" tabindex="-1" aria-labelledby="customerProfileTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-dark text-white"><h2 class="modal-title h5" id="customerProfileTitle"><i class="bi bi-person-circle me-2"></i>My Profile</h2><button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="customerProfileContent"><div class="text-center py-5"><span class="spinner-border"></span></div></div></div></div></div>`}function A(){document.getElementById(`customerProfileModal`)?.addEventListener(`show.bs.modal`,async()=>{let e=document.getElementById(`customerProfileContent`);e.innerHTML=`<div class="text-center py-5"><span class="spinner-border"></span></div>`;try{let[t,n]=await Promise.all([p(),_()]),r=t.customer,i=n.orders||[];e.innerHTML=`<div class="text-center mb-4"><div class="customer-profile-avatar mx-auto">${O(r.name?.[0]||`C`)}</div><h3 class="h4 mt-3 mb-1">${O(r.name)}</h3><span class="badge text-bg-success">Active customer</span></div><dl class="customer-profile-details"><div><dt><i class="bi bi-envelope me-2"></i>Email</dt><dd>${O(r.email)}</dd></div><div><dt><i class="bi bi-telephone me-2"></i>Phone</dt><dd>${O(r.phone)}</dd></div></dl><div class="row g-2 mt-3"><div class="col-6"><div class="profile-stat"><strong>${i.length}</strong><span>Total orders</span></div></div><div class="col-6"><div class="profile-stat"><strong>${i.filter(e=>e.orderStatus===`delivered`).length}</strong><span>Completed</span></div></div></div><button class="btn btn-warning w-100 mt-4" id="profileViewOrders"><i class="bi bi-box-seam me-2"></i>View My Orders</button>`,document.getElementById(`profileViewOrders`)?.addEventListener(`click`,()=>{window.dispatchEvent(new CustomEvent(`nutridust:open-orders`))})}catch{e.innerHTML=`<div class="alert alert-danger">Unable to load your profile. Please sign in again.</div>`}})}var j=e=>String(e??``).replace(/[&<>'"]/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,"'":`&#39;`,'"':`&quot;`})[e]),M=e=>new Intl.NumberFormat(`en-NG`,{style:`currency`,currency:`NGN`,maximumFractionDigits:0}).format(Number(e||0)),N=e=>String(e||`pending`).replaceAll(`_`,` `).replace(/\b\w/g,e=>e.toUpperCase());function P(){return`<div class="modal fade" id="customerOrdersModal" tabindex="-1" aria-labelledby="customerOrdersTitle" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header bg-dark text-white"><div><h2 class="modal-title h5" id="customerOrdersTitle"><i class="bi bi-box-seam me-2"></i>My Orders</h2><small class="text-white-50">Track every purchase and fulfilment update</small></div><button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="customerOrdersContent"><div class="text-center py-5"><span class="spinner-border"></span></div></div></div></div></div>`}function F(e){let t=e.fulfillmentType===`pickup`;return`<article class="customer-order-card"><div class="d-flex justify-content-between flex-wrap gap-2"><div><span class="text-secondary small">ORDER</span><h3 class="h5 mb-0">#${j(e.id)}</h3></div><div class="text-end"><span class="badge text-bg-${e.orderStatus===`delivered`?`success`:e.orderStatus===`cancelled`?`danger`:`warning`}">${j(N(e.orderStatus))}</span><strong class="d-block mt-2">${M(e.total)}</strong></div></div><hr><div class="row g-3"><div class="col-md-5"><small class="text-secondary">Fulfilment</small><strong class="d-block"><i class="bi bi-${t?`bag-check`:`truck`} me-2"></i>${t?`Self Pickup`:`Delivered to You`}</strong></div><div class="col-md-4"><small class="text-secondary">Payment</small><strong class="d-block">${j(N(e.paymentStatus))}</strong></div><div class="col-md-3"><small class="text-secondary">Placed</small><strong class="d-block">${new Date(e.createdAt).toLocaleDateString()}</strong></div></div>${t?`<div class="alert alert-info mt-3 mb-0"><i class="bi bi-info-circle me-2"></i>You can collect this order when its status becomes <strong>Ready for Pickup</strong>.</div>`:`<div class="order-address mt-3"><i class="bi bi-geo-alt-fill"></i><span>${j(e.deliveryAddress)}</span></div>`}<div class="mt-3"><button class="btn btn-sm btn-dark track-saved-order" data-id="${j(e.id)}"><i class="bi bi-search me-1"></i>Track Order</button></div></article>`}function I(){let e=document.getElementById(`customerOrdersModal`),t=document.getElementById(`customerOrdersContent`),n=!1,r=async(e=!1)=>{if(!(n||!t)){n=!0,e&&(t.innerHTML=`<div class="text-center py-5"><span class="spinner-border"></span></div>`);try{let e=(await _()).orders||[],n=e.length?`<div class="customer-order-list">${e.map(F).join(``)}</div>`:`<div class="text-center py-5"><i class="bi bi-bag display-3 text-secondary"></i><h3 class="h5 mt-3">No orders yet</h3><p class="text-secondary">Your completed purchases will appear here.</p></div>`;t.innerHTML!==n&&(t.innerHTML=n,t.querySelectorAll(`.track-saved-order`).forEach(e=>e.onclick=()=>{let t=document.getElementById(`trackOrderNumber`);t&&(t.value=e.dataset.id),window.dispatchEvent(new CustomEvent(`nutridust:track-order`,{detail:{orderId:e.dataset.id}}))}))}catch{e&&(t.innerHTML=`<div class="alert alert-danger">Unable to load your orders. Please try again.</div>`)}finally{n=!1}}};e?.addEventListener(`show.bs.modal`,()=>r(!0)),setInterval(()=>{!document.hidden&&e?.classList.contains(`show`)&&r(!1)},3e3)}var L=JSON.parse(localStorage.getItem(`nutridust-cart`))||[];function R(){localStorage.setItem(`nutridust-cart`,JSON.stringify(L))}function z(){return L}function B(e){let t=e._id||e.id,n=Number(e.quantityAvailable??0);if(n<=0)return{success:!1,message:`${e.name} is currently out of stock.`};let r=L.find(e=>(e._id||e.id)==t);if(r){if(r.quantity>=n)return{success:!1,message:`Only ${n.toLocaleString()} unit(s) of ${e.name} are available.`};r.quantity++,r.quantityAvailable=n}else L.push({...e,_id:t,quantity:1,quantityAvailable:n});return R(),{success:!0,cart:L}}function _e(){return L.reduce((e,t)=>e+Number(t.quantity||0),0)}function ve(e){let t=L.find(t=>(t._id||t.id)==e);if(!t)return{success:!1,message:`Product not found in cart.`};let n=Number(t.quantityAvailable??0);return t.quantity>=n?{success:!1,message:`Only ${n.toLocaleString()} unit(s) available.`}:(t.quantity++,R(),{success:!0,cart:L})}function ye(e){let t=L.find(t=>(t._id||t.id)==e);return t?(t.quantity--,t.quantity<=0&&(L=L.filter(t=>(t._id||t.id)!=e)),R(),{success:!0,cart:L}):{success:!1,message:`Product not found in cart.`}}function V(){L=[],R()}function be(e){let t=L.length;return L=L.filter(t=>(t._id||t.id)!=e),R(),{success:L.length<t,cart:L}}function H(){let e=z(),t=document.getElementById(`cartItems`),n=document.getElementById(`cartTotal`),r=document.getElementById(`cartCount`),i=document.getElementById(`clearCartButton`),a=document.getElementById(`checkoutButton`);if(!t||!n||!r)return;if(r.textContent=_e(),e.length===0){i?.classList.add(`d-none`),a&&(a.disabled=!0),t.innerHTML=`
+    `}var C=e=>String(e??``).replace(/[&<>'"]/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,"'":`&#39;`,'"':`&quot;`})[e]);function we(){return`<div class="modal fade" id="customerProfileModal" tabindex="-1" aria-labelledby="customerProfileTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-dark text-white"><h2 class="modal-title h5" id="customerProfileTitle"><i class="bi bi-person-circle me-2"></i>My Profile</h2><button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="customerProfileContent"><div class="text-center py-5"><span class="spinner-border"></span></div></div></div></div></div>`}function Te(){document.getElementById(`customerProfileModal`)?.addEventListener(`show.bs.modal`,async()=>{let e=document.getElementById(`customerProfileContent`);e.innerHTML=`<div class="text-center py-5"><span class="spinner-border"></span></div>`;try{let[t,n]=await Promise.all([p(),_()]),r=t.customer,i=n.orders||[];e.innerHTML=`<div class="text-center mb-4"><div class="customer-profile-avatar mx-auto">${C(r.name?.[0]||`C`)}</div><h3 class="h4 mt-3 mb-1">${C(r.name)}</h3><span class="badge text-bg-success">Active customer</span></div><dl class="customer-profile-details"><div><dt><i class="bi bi-envelope me-2"></i>Email</dt><dd>${C(r.email)}</dd></div><div><dt><i class="bi bi-telephone me-2"></i>Phone</dt><dd>${C(r.phone)}</dd></div></dl><div class="row g-2 mt-3"><div class="col-6"><div class="profile-stat"><strong>${i.length}</strong><span>Total orders</span></div></div><div class="col-6"><div class="profile-stat"><strong>${i.filter(e=>e.orderStatus===`delivered`).length}</strong><span>Completed</span></div></div></div><button class="btn btn-warning w-100 mt-4" id="profileViewOrders"><i class="bi bi-box-seam me-2"></i>View My Orders</button>`,document.getElementById(`profileViewOrders`)?.addEventListener(`click`,()=>{window.dispatchEvent(new CustomEvent(`nutridust:open-orders`))})}catch{e.innerHTML=`<div class="alert alert-danger">Unable to load your profile. Please sign in again.</div>`}})}var w=e=>String(e??``).replace(/[&<>'"]/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,"'":`&#39;`,'"':`&quot;`})[e]),T=e=>new Intl.NumberFormat(`en-NG`,{style:`currency`,currency:`NGN`,maximumFractionDigits:0}).format(Number(e||0)),E=e=>String(e||`pending`).replaceAll(`_`,` `).replace(/\b\w/g,e=>e.toUpperCase()),D=new Set([`picked_up`,`out_for_delivery`]);function O(){return`<div class="modal fade" id="customerOrdersModal" tabindex="-1" aria-labelledby="customerOrdersTitle" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header bg-dark text-white"><div><h2 class="modal-title h5" id="customerOrdersTitle"><i class="bi bi-box-seam me-2"></i>My Orders</h2><small class="text-white-50">Track every purchase and fulfilment update</small></div><button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="customerOrdersContent"><div class="text-center py-5"><span class="spinner-border"></span></div></div></div></div></div>`}function Ee(e){let t=e.fulfillmentType===`pickup`,n=[`delivered`,`cancelled`].includes(e.orderStatus),r=D.has(e.deliveryStatus);return`<article class="customer-order-card ${r?`customer-order-card-live`:``}"><div class="d-flex justify-content-between flex-wrap gap-2"><div><span class="text-secondary small">ORDER</span><h3 class="h5 mb-0">#${w(e.id)}</h3></div><div class="text-end"><span class="badge text-bg-${e.orderStatus===`delivered`?`success`:e.orderStatus===`cancelled`?`danger`:`warning`}">${w(E(e.orderStatus))}</span><strong class="d-block mt-2">${T(e.total)}</strong></div></div><hr>${r?`<div class="customer-live-banner"><span class="customer-live-pulse"></span><div><strong>Your rider is on the way</strong><small>The live position below refreshes automatically.</small></div></div>`:``}<div class="row g-3"><div class="col-md-5"><small class="text-secondary">Fulfilment</small><strong class="d-block"><i class="bi bi-${t?`bag-check`:`truck`} me-2"></i>${t?`Self Pickup`:`Delivered to You`}</strong></div><div class="col-md-4"><small class="text-secondary">Payment</small><strong class="d-block">${w(E(e.paymentStatus))}</strong></div><div class="col-md-3"><small class="text-secondary">Placed</small><strong class="d-block">${new Date(e.createdAt).toLocaleDateString()}</strong></div></div>${t?`<div class="alert alert-info mt-3 mb-0"><i class="bi bi-info-circle me-2"></i>You can collect this order when its status becomes <strong>Ready for Pickup</strong>.</div>`:`<div class="order-address mt-3"><i class="bi bi-geo-alt-fill"></i><span>${w(e.deliveryAddress)}</span></div>`}<div class="mt-3 d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-dark track-saved-order" data-id="${w(e.id)}"><i class="bi bi-search me-1"></i>Track Order</button>${!t&&!n?`<button class="btn btn-sm btn-success live-rider-order" data-id="${w(e.id)}"><i class="bi bi-${r?`broadcast-pin`:`geo-alt-fill`} me-1"></i>${r?`View Live Rider`:`Rider Location`}</button>`:``}</div><div class="live-order-location mt-3" data-live-order="${w(e.id)}"></div></article>`}function De(){let e=document.getElementById(`customerOrdersModal`),t=document.getElementById(`customerOrdersContent`),n=!1,i=null,a=null,o=()=>{clearInterval(i),i=null,a=null},s=e=>{o(),a=String(e),c(a),i=setInterval(()=>{document.hidden||c(a)},3e3)},c=async e=>{let n=t?.querySelector(`[data-live-order="${e}"]`);if(!n)return o();try{let t=await te(e);n.innerHTML=r(t.tracking),t.tracking.active||o()}catch(e){n.innerHTML=`<div class="alert alert-warning mb-0">${w(e.response?.data?.message||`Unable to load the rider location.`)}</div>`}},l=()=>{t.querySelectorAll(`.track-saved-order`).forEach(e=>e.onclick=()=>{let t=document.getElementById(`trackOrderNumber`);t&&(t.value=e.dataset.id),window.dispatchEvent(new CustomEvent(`nutridust:track-order`,{detail:{orderId:e.dataset.id}}))}),t.querySelectorAll(`.live-rider-order`).forEach(e=>e.onclick=()=>s(e.dataset.id))},u=async(e=!1)=>{if(!(n||!t)){n=!0,e&&(t.innerHTML=`<div class="text-center py-5"><span class="spinner-border"></span></div>`);try{let e=(await _()).orders||[],n=e.length?`<div class="customer-order-list">${e.map(Ee).join(``)}</div>`:`<div class="text-center py-5"><i class="bi bi-bag display-3 text-secondary"></i><h3 class="h5 mt-3">No orders yet</h3><p class="text-secondary">Your completed purchases will appear here.</p></div>`;if(!a&&t.innerHTML!==n){t.innerHTML=n,l();let r=e.find(e=>D.has(e.deliveryStatus));r&&s(r.id)}}catch{e&&(t.innerHTML=`<div class="alert alert-danger">Unable to load your orders. Please try again.</div>`)}finally{n=!1}}};e?.addEventListener(`show.bs.modal`,()=>u(!0)),e?.addEventListener(`hidden.bs.modal`,o),setInterval(()=>{!document.hidden&&e?.classList.contains(`show`)&&!a&&u(!1)},3e3)}var Oe=`29 August 2026`,k=`support@nutridustfoods.com`,A=`info@nutridustfoods.com`,j=(e,t,n)=>`
+    <div class="compliance-page">
+        <header class="compliance-header">
+            <a class="compliance-brand" href="/" aria-label="NutriDust Foods home">
+                <img src="/favicon.svg" alt="" onerror="this.style.display='none'">
+                <span>NutriDust Foods</span>
+            </a>
+            <a class="compliance-home" href="/">Back to shop</a>
+        </header>
+        <main class="compliance-main">
+            <div class="compliance-title">
+                <p class="compliance-kicker">NUTRIDUST FOODS</p>
+                <h1>${e}</h1>
+                <p>${t}</p>
+                <small>Effective date: ${Oe}</small>
+            </div>
+            <article class="compliance-card">${n}</article>
+        </main>
+        ${N()}
+    </div>
+`,M=(e,t)=>`
+    <section>
+        <h2>${e}</h2>
+        ${t}
+    </section>
+`;function N(){return`
+        <footer class="compliance-footer">
+            <div>
+                <strong>NutriDust Foods</strong>
+                <span>Premium nutrition, shopping and delivery services.</span>
+            </div>
+            <nav aria-label="Legal and support links">
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/account-deletion">Delete account</a>
+                <a href="/support">Support</a>
+            </nav>
+            <small>&copy; ${new Date().getFullYear()} NutriDust Foods. All rights reserved.</small>
+        </footer>
+    `}var P=()=>j(`Privacy Policy`,`How we collect, use, protect and manage personal information across the NutriDust Foods website and apps.`,[M(`1. Who this policy covers`,`
+            <p>This policy applies to customers, rider applicants, approved riders, staff and other people who use the NutriDust Foods website, Shop App, Rider App or Admin App.</p>
+        `),M(`2. Information we collect`,`
+            <ul>
+                <li><strong>Account and contact details:</strong> name, email address, telephone number and login information.</li>
+                <li><strong>Orders and delivery:</strong> products ordered, delivery or pickup choice, delivery address, order history and delivery status.</li>
+                <li><strong>Payment information:</strong> payment status, amount and transaction reference. Card and bank details are entered with our payment provider and are not stored by NutriDust Foods.</li>
+                <li><strong>Rider applications:</strong> names, contact details, vehicle type, plate number, driving licence where applicable, proof of ownership, inspection information and onboarding status.</li>
+                <li><strong>Rider location:</strong> precise or approximate GPS coordinates, accuracy and update time while an approved rider is available or completing an assigned delivery.</li>
+                <li><strong>Technical information:</strong> device, browser, IP address, diagnostic logs and security events needed to operate and protect the service.</li>
+                <li><strong>Communications:</strong> messages and support requests sent to us.</li>
+            </ul>
+        `),M(`3. How we use information`,`
+            <p>We use information to create and secure accounts; process orders and payments; calculate and arrange delivery; provide receipts and order updates; review and onboard riders; assign deliveries; show authorised staff the assigned rider's progress to pickup and delivery; show a customer the assigned rider's live progress only after pickup; provide customer support; prevent fraud; maintain records; and meet legal obligations.</p>
+        `),M(`4. Services that process information`,`
+            <p>We use carefully selected providers to operate NutriDust Foods, including hosting, database and file storage, email delivery, notifications and payment processing services. Paystack processes online payments under its own privacy terms. Providers receive only the information needed to perform their services.</p>
+        `),M(`5. Sharing`,`
+            <p>We do not sell personal information. We may share necessary order and contact details with assigned riders, authorised staff and service providers. During an active delivery, the customer may see the assigned rider's current location after pickup, while authorised staff may see the rider travelling to pickup and to the customer. Live customer visibility ends when the delivery is completed, cancelled or failed. We may disclose information where required by law, to protect users, or to investigate fraud and security incidents.</p>
+        `),M(`6. Security and retention`,`
+            <p>We use access controls, encrypted connections, restricted administrative permissions and other reasonable safeguards. No online system is completely risk-free. We keep information only as long as needed for operations, dispute resolution, fraud prevention and legal or financial record-keeping.</p>
+        `),M(`7. Your choices and rights`,`
+            <p>You may ask to access, correct or delete your personal information. You can also object to certain uses or withdraw consent where applicable. See our <a href="/account-deletion">Account and Data Deletion page</a> for deletion instructions.</p>
+        `),M(`8. Children`,`
+            <p>NutriDust Foods services are not directed to children who cannot legally consent to the processing of their personal information. A parent or guardian should contact us if a child has provided information without appropriate permission.</p>
+        `),M(`9. Contact`,`
+            <p>Privacy questions and requests can be sent to <a href="mailto:${k}">${k}</a>.</p>
+        `)].join(``)),F=()=>j(`Terms and Conditions`,`The rules that apply when using NutriDust Foods services.`,[M(`1. Acceptance`,`<p>By accessing or using NutriDust Foods, you agree to these terms. If you do not agree, do not use the service.</p>`),M(`2. Accounts`,`<p>You must provide accurate information, protect your password and promptly report unauthorised access. You are responsible for activity performed through your account. Staff and rider accounts may be used only by the person to whom they are assigned.</p>`),M(`3. Products, prices and availability`,`<p>Product descriptions, prices and stock may change. An order is accepted only after it is confirmed by our system. We may correct genuine pricing or stock errors and will contact you when an order cannot be fulfilled.</p>`),M(`4. Orders and payments`,`<p>You must provide complete delivery and contact details. Online payments are processed through our payment provider. A successful payment notification does not prevent us from carrying out fraud, stock or delivery checks. Refunds, where approved, are returned using an appropriate available method.</p>`),M(`5. Delivery and pickup`,`<p>Delivery fees and estimates depend on the selected location and service conditions. Delivery times are estimates and can be affected by traffic, weather, access restrictions and events outside our control. Customers must provide a reachable telephone number and a safe, accurate delivery location.</p>`),M(`6. Rider and staff use`,`<p>Rider applications are subject to document review, physical inspection where required and approval. Approval is not guaranteed. NutriDust Foods may suspend or disable rider and staff access for safety, fraud, misconduct, policy breaches or operational reasons.</p>`),M(`7. Acceptable use`,`<p>You must not misuse the service, interfere with its security, impersonate another person, submit false documents, attempt unauthorised access, or use the service for unlawful or harmful activity.</p>`),M(`8. Service availability`,`<p>We work to keep the service available but do not guarantee uninterrupted access. Features may be changed, suspended or withdrawn for maintenance, security, legal or operational reasons.</p>`),M(`9. Liability`,`<p>To the extent permitted by applicable law, NutriDust Foods is not responsible for indirect or consequential losses arising from use of the service. Nothing in these terms excludes rights or liabilities that cannot lawfully be excluded.</p>`),M(`10. Changes and governing law`,`<p>We may update these terms and will publish the effective date. These terms are governed by applicable laws of the Federal Republic of Nigeria.</p>`),M(`11. Contact`,`<p>Questions about these terms can be sent to <a href="mailto:${k}">${k}</a>.</p>`)].join(``)),I=()=>j(`Account and Data Deletion`,`Request deletion of a NutriDust Foods customer, rider or staff account and associated personal data.`,[M(`How to request deletion`,`
+            <ol>
+                <li>Email <a href="mailto:${k}?subject=Account%20Deletion%20Request">${k}</a> using the email address registered to your account.</li>
+                <li>Use the subject <strong>Account Deletion Request</strong>.</li>
+                <li>State whether the request concerns a customer, rider or staff account and provide your registered name and telephone number. Do not send your password, payment card information or one-time verification codes.</li>
+                <li>We may ask for limited information to verify ownership and protect the account from an unauthorised deletion request.</li>
+            </ol>
+            <p>You may also use an in-app deletion option if it is available in your account settings.</p>
+        `),M(`What will be deleted`,`<p>After verification, we will close the account and delete or anonymise profile details, saved addresses, authentication data and other personal information that is not required for an ongoing transaction or lawful retention.</p>`),M(`What may be retained`,`<p>Completed order, payment, fraud-prevention, safety, rider inspection and financial records may be retained where reasonably necessary for legal obligations, accounting, disputes and security. Retained information is restricted and deleted or anonymised when the applicable need ends.</p>`),M(`Processing time`,`<p>We aim to acknowledge requests promptly and complete verified requests within 30 days, unless additional time is permitted or required by law. We will explain any necessary delay.</p>`),M(`Deletion without an account`,`<p>If you submitted a rider application or contacted support without creating an active account, use the same email process and identify the application or communication you want removed.</p>`)].join(``)),ke={"/privacy":P,"/privacy-policy":P,"/terms":F,"/terms-and-conditions":F,"/account-deletion":I,"/delete-account":I,"/support":()=>j(`Support`,`Help with orders, payments, accounts, rider onboarding and NutriDust Foods services.`,[M(`Customer and account support`,`<p>Email <a href="mailto:${k}">${k}</a> for login problems, payment concerns, refunds, account changes, complaints or technical support.</p>`),M(`Orders and general enquiries`,`<p>Email <a href="mailto:${A}">${A}</a> for order enquiries, product information and general business questions.</p>`),M(`Rider onboarding`,`<p>Rider applicants should use the Rider App to submit an application. For application or onboarding assistance, contact <a href="mailto:${k}">${k}</a>.</p>`),M(`When contacting us`,`<p>Include your name, registered telephone number and order or application number where relevant. Never send a password, one-time verification code, full payment-card number or API key.</p>`),M(`Security and urgent concerns`,`<p>Report suspected account misuse or a safety concern immediately to <a href="mailto:${k}">${k}</a>. For emergencies, contact the appropriate local emergency service.</p>`)].join(``))};function Ae(){let e=window.location.pathname.replace(/\/$/,``)||`/`,t=ke[e.toLowerCase()];return t?(document.title=`${e.includes(`privacy`)?`Privacy Policy`:e.includes(`terms`)?`Terms and Conditions`:e.includes(`deletion`)||e.includes(`delete`)?`Account Deletion`:`Support`} | NutriDust Foods`,document.querySelector(`#app`).innerHTML=t(),!0):!1}var L=JSON.parse(localStorage.getItem(`nutridust-cart`))||[];function R(){localStorage.setItem(`nutridust-cart`,JSON.stringify(L))}function z(){return L}function B(e){let t=e._id||e.id,n=Number(e.quantityAvailable??0);if(n<=0)return{success:!1,message:`${e.name} is currently out of stock.`};let r=L.find(e=>(e._id||e.id)==t);if(r){if(r.quantity>=n)return{success:!1,message:`Only ${n.toLocaleString()} unit(s) of ${e.name} are available.`};r.quantity++,r.quantityAvailable=n}else L.push({...e,_id:t,quantity:1,quantityAvailable:n});return R(),{success:!0,cart:L}}function je(){return L.reduce((e,t)=>e+Number(t.quantity||0),0)}function Me(e){let t=L.find(t=>(t._id||t.id)==e);if(!t)return{success:!1,message:`Product not found in cart.`};let n=Number(t.quantityAvailable??0);return t.quantity>=n?{success:!1,message:`Only ${n.toLocaleString()} unit(s) available.`}:(t.quantity++,R(),{success:!0,cart:L})}function Ne(e){let t=L.find(t=>(t._id||t.id)==e);return t?(t.quantity--,t.quantity<=0&&(L=L.filter(t=>(t._id||t.id)!=e)),R(),{success:!0,cart:L}):{success:!1,message:`Product not found in cart.`}}function V(){L=[],R()}function Pe(e){let t=L.length;return L=L.filter(t=>(t._id||t.id)!=e),R(),{success:L.length<t,cart:L}}function H(){let e=z(),t=document.getElementById(`cartItems`),n=document.getElementById(`cartTotal`),r=document.getElementById(`cartCount`),i=document.getElementById(`clearCartButton`),a=document.getElementById(`checkoutButton`);if(!t||!n||!r)return;if(r.textContent=je(),e.length===0){i?.classList.add(`d-none`),a&&(a.disabled=!0),t.innerHTML=`
 
             <div class="nutridust-cart-empty">
 
@@ -2359,7 +2440,7 @@ Continue to Payment
 
             </div>
 
-        `}),n.textContent=`₦`+o.toLocaleString(),document.querySelectorAll(`.increase-btn`).forEach(e=>{e.addEventListener(`click`,()=>{let t=ve(e.dataset.id);t&&!t.success&&t.message&&alert(t.message),H()})}),document.querySelectorAll(`.decrease-btn`).forEach(e=>{e.addEventListener(`click`,()=>{ye(e.dataset.id),H()})}),document.querySelectorAll(`.remove-cart-item`).forEach(e=>{e.addEventListener(`click`,()=>{window.confirm(`Remove ${e.dataset.name||`this item`} from your cart?`)&&(be(e.dataset.id),H())})}),i&&(i.onclick=()=>{window.confirm(`Remove all items from your cart?`)&&(V(),H())})}function U(e){return String(e??``).replace(/&/g,`&amp;`).replace(/</g,`&lt;`).replace(/>/g,`&gt;`).replace(/"/g,`&quot;`).replace(/'/g,`&#039;`)}var W=`https://nutridustfoods.onrender.com`,G=null,K=1;function xe(e){if(!e)return``;let t=String(e).trim();return t?t.startsWith(`http://`)||t.startsWith(`https://`)||t.startsWith(`data:`)?t:t.startsWith(`/uploads/`)?W+t:t.startsWith(`uploads/`)?`https://nutridustfoods.onrender.com/`+t:`${W}/uploads/products/${t}`:``}function Se(e){if(!e){console.error(`❌ Cannot show product: product not found.`);return}G=e,K=1;let r=document.getElementById(`productModal`),i=document.getElementById(`modalImage`),a=document.getElementById(`modalCategory`),o=document.getElementById(`modalTitle`),s=document.getElementById(`modalPrice`),c=document.getElementById(`modalDescription`),l=document.getElementById(`modalQty`),u=document.getElementById(`modalRating`),d=document.getElementById(`modalAddToCart`);if(!r){console.error(`❌ Product modal element not found.`);return}let f=xe(e.image);if(console.log(`🖼️ Product image:`,e.image),console.log(`🖼️ Modal image URL:`,f),i){if(f)i.src=f,i.alt=e.name||`Product`,i.style.display=`block`,i.onerror=()=>{console.error(`❌ Product modal image failed:`,f),i.removeAttribute(`src`),i.style.display=`none`;let e=i.parentElement;e&&!e.querySelector(`.modal-image-fallback`)&&e.insertAdjacentHTML(`beforeend`,`
+        `}),n.textContent=`₦`+o.toLocaleString(),document.querySelectorAll(`.increase-btn`).forEach(e=>{e.addEventListener(`click`,()=>{let t=Me(e.dataset.id);t&&!t.success&&t.message&&alert(t.message),H()})}),document.querySelectorAll(`.decrease-btn`).forEach(e=>{e.addEventListener(`click`,()=>{Ne(e.dataset.id),H()})}),document.querySelectorAll(`.remove-cart-item`).forEach(e=>{e.addEventListener(`click`,()=>{window.confirm(`Remove ${e.dataset.name||`this item`} from your cart?`)&&(Pe(e.dataset.id),H())})}),i&&(i.onclick=()=>{window.confirm(`Remove all items from your cart?`)&&(V(),H())})}function U(e){return String(e??``).replace(/&/g,`&amp;`).replace(/</g,`&lt;`).replace(/>/g,`&gt;`).replace(/"/g,`&quot;`).replace(/'/g,`&#039;`)}var W=`https://nutridustfoods.onrender.com`,G=null,K=1;function Fe(e){if(!e)return``;let t=String(e).trim();return t?t.startsWith(`http://`)||t.startsWith(`https://`)||t.startsWith(`data:`)?t:t.startsWith(`/uploads/`)?W+t:t.startsWith(`uploads/`)?`https://nutridustfoods.onrender.com/`+t:`${W}/uploads/products/${t}`:``}function q(e){if(!e){console.error(`❌ Cannot show product: product not found.`);return}G=e,K=1;let r=document.getElementById(`productModal`),i=document.getElementById(`modalImage`),a=document.getElementById(`modalCategory`),o=document.getElementById(`modalTitle`),s=document.getElementById(`modalPrice`),c=document.getElementById(`modalDescription`),l=document.getElementById(`modalQty`),u=document.getElementById(`modalRating`),d=document.getElementById(`modalAddToCart`);if(!r){console.error(`❌ Product modal element not found.`);return}let f=Fe(e.image);if(console.log(`🖼️ Product image:`,e.image),console.log(`🖼️ Modal image URL:`,f),i){if(f)i.src=f,i.alt=e.name||`Product`,i.style.display=`block`,i.onerror=()=>{console.error(`❌ Product modal image failed:`,f),i.removeAttribute(`src`),i.style.display=`none`;let e=i.parentElement;e&&!e.querySelector(`.modal-image-fallback`)&&e.insertAdjacentHTML(`beforeend`,`
 
                         <div
                             class="
@@ -2423,7 +2504,7 @@ Continue to Payment
 
                     </div>
 
-                    `)}}a&&(a.textContent=e.category||``),o&&(o.textContent=e.name||``),s&&(s.textContent=`₦${Number(e.price||0).toLocaleString()}`),c&&(c.textContent=e.description||``),u&&(u.innerHTML=Ce(Number(e.rating||0))),l&&(l.textContent=K),d&&(d.onclick=()=>{if(G){for(let e=0;e<K;e++)B(G);H(),n.getOrCreateInstance(r).hide(),r.addEventListener(`hidden.bs.modal`,()=>{let e=document.getElementById(`cart`);e&&t.getOrCreateInstance(e).show()},{once:!0})}}),n.getOrCreateInstance(r).show()}function Ce(e){let t=Math.max(0,Math.min(5,Number(e)||0)),n=``;for(let e=1;e<=5;e++)n+=e<=t?`
+                    `)}}a&&(a.textContent=e.category||``),o&&(o.textContent=e.name||``),s&&(s.textContent=`₦${Number(e.price||0).toLocaleString()}`),c&&(c.textContent=e.description||``),u&&(u.innerHTML=Ie(Number(e.rating||0))),l&&(l.textContent=K),d&&(d.onclick=()=>{if(G){for(let e=0;e<K;e++)B(G);H(),n.getOrCreateInstance(r).hide(),r.addEventListener(`hidden.bs.modal`,()=>{let e=document.getElementById(`cart`);e&&t.getOrCreateInstance(e).show()},{once:!0})}}),n.getOrCreateInstance(r).show()}function Ie(e){let t=Math.max(0,Math.min(5,Number(e)||0)),n=``;for(let e=1;e<=5;e++)n+=e<=t?`
 
                 <i
                     class="bi bi-star-fill text-warning me-1"
@@ -2435,7 +2516,7 @@ Continue to Payment
                     class="bi bi-star text-warning me-1"
                 ></i>
 
-            `;return n}document.addEventListener(`click`,e=>{if(!e.target.closest(`#qtyPlus`))return;K++;let t=document.getElementById(`modalQty`);t&&(t.textContent=K)}),document.addEventListener(`click`,e=>{if(!e.target.closest(`#qtyMinus`))return;K>1&&K--;let t=document.getElementById(`modalQty`);t&&(t.textContent=K)});function q(){try{return c()||null}catch(e){return console.error(`❌ Unable to read customer session:`,e),null}}function J(){let e=s(),t=q();return!!(e&&t)}function Y(){let e=document.getElementById(`customerAuthModal`);if(!e){console.error(`❌ Customer authentication modal was not found.`),alert(`Please login or create an account before checkout.`);return}n.getOrCreateInstance(e).show()}function X(e){if(!e)return 0;let t=[e.total,e.totalAmount,e.total_amount,e.amount,e.paidAmount,e.paid_amount,e.grandTotal,e.grand_total];for(let e of t)if(e!=null&&e!==``&&Number.isFinite(Number(e)))return Number(e);return 0}function Z(e){let t=Number(e);return Number.isFinite(t)?`₦`+t.toLocaleString(`en-NG`):`₦0`}async function we(){let e=new URLSearchParams(window.location.search),t=e.get(`reference`)||e.get(`trxref`);if(!t)return!1;console.log(`🔍 Payment callback detected:`,t);try{let e=await v(t);if(console.log(`✅ Payment verification result:`,e),!e||!e.success||!e.order)throw Error(e?.message||`Payment verification failed.`);console.log(`📦 Verified order:`,e.order);let r=X(e.order);console.log(`💰 Total paid:`,r),V(),H(),window.history.replaceState({},document.title,window.location.pathname),localStorage.removeItem(`nutridust-pending-order`);let i=document.getElementById(`paymentSuccessModal`);if(!i)return console.error(`❌ Payment success modal was not found.`),!0;let a=document.getElementById(`successOrderId`);a&&(a.textContent=`#${e.order.id}`);let o=document.getElementById(`successOrderAmount`);return o&&(o.textContent=Z(r)),n.getOrCreateInstance(i).show(),!0}catch(e){return console.error(`❌ Payment verification failed:`,e),window.history.replaceState({},document.title,window.location.pathname),alert(`We could not verify your payment.
+            `;return n}document.addEventListener(`click`,e=>{if(!e.target.closest(`#qtyPlus`))return;K++;let t=document.getElementById(`modalQty`);t&&(t.textContent=K)}),document.addEventListener(`click`,e=>{if(!e.target.closest(`#qtyMinus`))return;K>1&&K--;let t=document.getElementById(`modalQty`);t&&(t.textContent=K)});function J(){try{return l()||null}catch(e){return console.error(`❌ Unable to read customer session:`,e),null}}function Y(){let e=c(),t=J();return!!(e&&t)}function X(){let e=document.getElementById(`customerAuthModal`);if(!e){console.error(`❌ Customer authentication modal was not found.`),alert(`Please login or create an account before checkout.`);return}n.getOrCreateInstance(e).show()}function Le(e){if(!e)return 0;let t=[e.total,e.totalAmount,e.total_amount,e.amount,e.paidAmount,e.paid_amount,e.grandTotal,e.grand_total];for(let e of t)if(e!=null&&e!==``&&Number.isFinite(Number(e)))return Number(e);return 0}function Z(e){let t=Number(e);return Number.isFinite(t)?`₦`+t.toLocaleString(`en-NG`):`₦0`}async function Re(){let e=new URLSearchParams(window.location.search),t=e.get(`reference`)||e.get(`trxref`);if(!t)return!1;console.log(`🔍 Payment callback detected:`,t);try{let e=await re(t);if(console.log(`✅ Payment verification result:`,e),!e||!e.success||!e.order)throw Error(e?.message||`Payment verification failed.`);console.log(`📦 Verified order:`,e.order);let r=Le(e.order);console.log(`💰 Total paid:`,r),V(),H(),window.history.replaceState({},document.title,window.location.pathname),localStorage.removeItem(`nutridust-pending-order`);let i=document.getElementById(`paymentSuccessModal`);if(!i)return console.error(`❌ Payment success modal was not found.`),!0;let a=document.getElementById(`successOrderId`);a&&(a.textContent=`#${e.order.id}`);let o=document.getElementById(`successOrderAmount`);return o&&(o.textContent=Z(r)),n.getOrCreateInstance(i).show(),!0}catch(e){return console.error(`❌ Payment verification failed:`,e),window.history.replaceState({},document.title,window.location.pathname),alert(`We could not verify your payment.
 
 `+(e?.message||`Unknown payment verification error.`)),!1}}function Q(e){let t=String(e?.orderStatus||`pending`).toLowerCase();(t===`shipped`||t===`on_delivery`)&&(t=`out_for_delivery`);let n=e?.fulfillmentType===`pickup`,r=n?[`pending`,`processing`,`ready_for_pickup`,`delivered`]:[`pending`,`processing`,`out_for_delivery`,`delivered`],i=n?{pending:`Pending`,processing:`Processing`,ready_for_pickup:`Ready for Pickup`,delivered:`Collected`}:{pending:`Pending`,processing:`Processing`,out_for_delivery:`On Delivery`,delivered:`Delivered`},a=r.indexOf(t);if(t===`cancelled`)return`
 
@@ -2577,39 +2658,41 @@ Continue to Payment
 
             </div>
 
-        `).join(``)}async function Te(){try{let e=await m();if(document.querySelector(`#app`).innerHTML=`
+        `).join(``)}async function ze(){try{if(Ae())return;let e=await m();if(document.querySelector(`#app`).innerHTML=`
 
-            ${re()}
+            ${le()}
 
-            ${ae()}
-
-            ${oe()}
-
-            ${me()}
-
-            ${he()}
-
-            ${await ue()}
+            ${de()}
 
             ${fe()}
 
-            ${D()}
+            ${ve()}
 
-            ${pe()}
+            ${ye()}
+
+            ${await x()}
 
             ${ge()}
 
-            ${T()}
+            ${Ce()}
 
-            ${E()}
+            ${_e()}
 
-            ${te()}
+            ${be()}
 
-            ${k()}
+            ${xe()}
 
-            ${P()}
+            ${Se()}
 
-        `,ne(),ie(),A(),I(),window.addEventListener(`nutridust:track-order`,e=>{let t=document.getElementById(`customerOrdersModal`);t&&n.getInstance(t)?.hide(),document.getElementById(`trackOrderSection`)?.scrollIntoView({behavior:`smooth`,block:`start`});let r=document.getElementById(`trackOrderNumber`);r&&(r.value=e.detail?.orderId||r.value),setTimeout(()=>document.getElementById(`trackOrderForm`)?.requestSubmit(),350)}),s())try{let e=await p();e?.success&&console.log(`✅ Current customer loaded:`,e.customer)}catch(e){console.warn(`⚠️ Unable to refresh customer session:`,e?.message)}console.log(`🔐 Customer session:`,q()),H(),await we();let r=document.getElementById(`cart`),i=t.getOrCreateInstance(r),a=document.getElementById(`cartButton`);a&&a.addEventListener(`click`,()=>{let e=document.getElementById(`productModal`);if(e&&e.classList.contains(`show`)){let t=n.getOrCreateInstance(e);e.addEventListener(`hidden.bs.modal`,()=>{i.show()},{once:!0}),t.hide()}else i.show()}),document.querySelectorAll(`.view-product`).forEach(t=>{t.addEventListener(`click`,()=>{let n=e.find(e=>e.id===Number(t.dataset.id));if(!n){console.error(`❌ Product not found:`,t.dataset.id);return}Se(n)})}),document.querySelectorAll(`.add-to-cart`).forEach(t=>{t.addEventListener(`click`,()=>{let n=e.find(e=>e.id===Number(t.dataset.id));if(!n){console.error(`❌ Product not found:`,t.dataset.id);return}B(n),H()})});let o=document.getElementById(`checkoutButton`);o&&o.addEventListener(`click`,()=>{if(z().length===0){alert(`Your cart is empty.`);return}if(!J()){console.log(`🔐 Checkout blocked: customer is not logged in.`),i.hide(),Y();return}let e=q();console.log(`✅ Customer allowed to checkout:`,e),i.hide();let t=document.getElementById(`checkoutTotal`),r=document.getElementById(`cartTotal`);t&&r&&(t.textContent=r.textContent),n.getOrCreateInstance(document.getElementById(`checkoutModal`)).show()});let c=document.getElementById(`checkoutForm`);if(c){let e=null,t=async(t=!1)=>{let n=c.querySelector(`input[name="fulfillmentType"]:checked`)?.value||`delivery`,r=document.getElementById(`deliveryAddressGroup`),i=document.getElementById(`customerAddress`),a=document.getElementById(`checkoutDeliveryFee`),o=document.getElementById(`cartTotal`)?.textContent||`0`,s=Number(o.replace(/[^0-9.]/g,``))||0,l=0;if(n===`delivery`&&t&&i?.value.trim().length>=5){a&&(a.textContent=`Calculating route…`);try{e=await g(i.value.trim())}catch(t){e=null,a&&(a.textContent=t.response?.data?.message||`Unable to calculate`);return}}n===`delivery`&&(l=Number(e?.fee||0)),r&&r.classList.toggle(`d-none`,n===`pickup`),i&&(i.required=n===`delivery`);let u=document.getElementById(`checkoutSubtotal`),d=document.getElementById(`checkoutTotal`);u&&(u.textContent=`₦${s.toLocaleString()}`),a&&(a.textContent=n===`pickup`?`Free`:l?`₦${l.toLocaleString()} (${e.estimated?`local test rate`:`${e.distanceKm} km`})`:`Enter your address`),d&&(d.textContent=`₦${(s+l).toLocaleString()}`)};c.querySelectorAll(`input[name="fulfillmentType"]`).forEach(n=>n.addEventListener(`change`,()=>{e=null,t(!1)})),document.getElementById(`customerAddress`)?.addEventListener(`blur`,()=>t(!0)),document.getElementById(`checkoutModal`)?.addEventListener(`shown.bs.modal`,t),c.addEventListener(`submit`,async e=>{if(e.preventDefault(),!J()){alert(`Please login before placing your order.`),Y();return}if(!q()){alert(`Your customer session could not be found. Please login again.`);return}let t=e.currentTarget.querySelector(`button[type="submit"]`),n=document.getElementById(`customerAddress`)?.value?.trim()||``,r=e.currentTarget.querySelector(`input[name="fulfillmentType"]:checked`)?.value||`delivery`;if(r===`delivery`&&!n){alert(`Please enter your delivery address.`);return}let i=z();if(i.length===0){alert(`Your cart is empty.`);return}let a=i.map(e=>({productId:Number(e.id||e._id),quantity:Number(e.quantity)}));if(a.some(e=>!Number.isInteger(e.productId)||e.productId<=0||!Number.isInteger(e.quantity)||e.quantity<=0)){alert(`One or more products in your cart are invalid. Please refresh the page and try again.`);return}let o={deliveryAddress:n,fulfillmentType:r,items:a};console.log(`📦 Sending authenticated customer order:`,o);try{t&&(t.disabled=!0,t.textContent=`Creating Order...`);let e=await h(o);if(console.log(`✅ Order created:`,e),!e||!e.success||!e.order)throw Error(e?.message||`The order could not be created.`);let n=e.order.id;t&&(t.textContent=`Connecting to Payment...`),console.log(`💳 Payment initialization for Order:`,n);let r=await ee(n);if(console.log(`💳 Payment response:`,r),!r||!r.success||!r.authorizationUrl)throw Error(r?.message||`Unable to initialize payment.`);localStorage.setItem(`nutridust-pending-order`,String(n)),window.location.href=r.authorizationUrl}catch(e){console.error(`❌ Checkout / Payment Error:`,e),e?.response?.status===401?(alert(`Your login session has expired. Please login again.`),Y()):alert(`Unable to continue to payment.
+            ${se()}
+
+            ${we()}
+
+            ${O()}
+
+            ${N()}
+
+        `,ce(),ue(),Te(),De(),window.addEventListener(`nutridust:track-order`,e=>{let t=document.getElementById(`customerOrdersModal`);t&&n.getInstance(t)?.hide(),document.getElementById(`trackOrderSection`)?.scrollIntoView({behavior:`smooth`,block:`start`});let r=document.getElementById(`trackOrderNumber`);r&&(r.value=e.detail?.orderId||r.value),setTimeout(()=>document.getElementById(`trackOrderForm`)?.requestSubmit(),350)}),c())try{let e=await p();e?.success&&console.log(`✅ Current customer loaded:`,e.customer)}catch(e){console.warn(`⚠️ Unable to refresh customer session:`,e?.message)}console.log(`🔐 Customer session:`,J()),H(),await Re();let r=document.getElementById(`cart`),i=t.getOrCreateInstance(r),a=document.getElementById(`cartButton`);a&&a.addEventListener(`click`,()=>{let e=document.getElementById(`productModal`);if(e&&e.classList.contains(`show`)){let t=n.getOrCreateInstance(e);e.addEventListener(`hidden.bs.modal`,()=>{i.show()},{once:!0}),t.hide()}else i.show()}),document.querySelectorAll(`.view-product`).forEach(t=>{t.addEventListener(`click`,()=>{let n=e.find(e=>e.id===Number(t.dataset.id));if(!n){console.error(`❌ Product not found:`,t.dataset.id);return}q(n)})}),document.querySelectorAll(`.add-to-cart`).forEach(t=>{t.addEventListener(`click`,()=>{let n=e.find(e=>e.id===Number(t.dataset.id));if(!n){console.error(`❌ Product not found:`,t.dataset.id);return}B(n),H()})});let o=document.getElementById(`checkoutButton`);o&&o.addEventListener(`click`,()=>{if(z().length===0){alert(`Your cart is empty.`);return}if(!Y()){console.log(`🔐 Checkout blocked: customer is not logged in.`),i.hide(),X();return}let e=J();console.log(`✅ Customer allowed to checkout:`,e),i.hide();let t=document.getElementById(`checkoutTotal`),r=document.getElementById(`cartTotal`);t&&r&&(t.textContent=r.textContent),n.getOrCreateInstance(document.getElementById(`checkoutModal`)).show()});let s=document.getElementById(`checkoutForm`);if(s){let e=null,t=async(t=!1)=>{let n=s.querySelector(`input[name="fulfillmentType"]:checked`)?.value||`delivery`,r=document.getElementById(`deliveryAddressGroup`),i=document.getElementById(`customerAddress`),a=document.getElementById(`checkoutDeliveryFee`),o=document.getElementById(`cartTotal`)?.textContent||`0`,c=Number(o.replace(/[^0-9.]/g,``))||0,l=0;if(n===`delivery`&&t&&i?.value.trim().length>=5){a&&(a.textContent=`Calculating route…`);try{e=await g(i.value.trim())}catch(t){e=null,a&&(a.textContent=t.response?.data?.message||`Unable to calculate`);return}}n===`delivery`&&(l=Number(e?.fee||0)),r&&r.classList.toggle(`d-none`,n===`pickup`),i&&(i.required=n===`delivery`);let u=document.getElementById(`checkoutSubtotal`),d=document.getElementById(`checkoutTotal`);u&&(u.textContent=`₦${c.toLocaleString()}`),a&&(a.textContent=n===`pickup`?`Free`:l?`₦${l.toLocaleString()} (${e.estimated?`local test rate`:`${e.distanceKm} km`})`:`Enter your address`),d&&(d.textContent=`₦${(c+l).toLocaleString()}`)};s.querySelectorAll(`input[name="fulfillmentType"]`).forEach(n=>n.addEventListener(`change`,()=>{e=null,t(!1)})),document.getElementById(`customerAddress`)?.addEventListener(`blur`,()=>t(!0)),document.getElementById(`checkoutModal`)?.addEventListener(`shown.bs.modal`,t),s.addEventListener(`submit`,async e=>{if(e.preventDefault(),!Y()){alert(`Please login before placing your order.`),X();return}if(!J()){alert(`Your customer session could not be found. Please login again.`);return}let t=e.currentTarget.querySelector(`button[type="submit"]`),n=document.getElementById(`customerAddress`)?.value?.trim()||``,r=e.currentTarget.querySelector(`input[name="fulfillmentType"]:checked`)?.value||`delivery`;if(r===`delivery`&&!n){alert(`Please enter your delivery address.`);return}let i=z();if(i.length===0){alert(`Your cart is empty.`);return}let a=i.map(e=>({productId:Number(e.id||e._id),quantity:Number(e.quantity)}));if(a.some(e=>!Number.isInteger(e.productId)||e.productId<=0||!Number.isInteger(e.quantity)||e.quantity<=0)){alert(`One or more products in your cart are invalid. Please refresh the page and try again.`);return}let o={deliveryAddress:n,fulfillmentType:r,items:a};console.log(`📦 Sending authenticated customer order:`,o);try{t&&(t.disabled=!0,t.textContent=`Creating Order...`);let e=await h(o);if(console.log(`✅ Order created:`,e),!e||!e.success||!e.order)throw Error(e?.message||`The order could not be created.`);let n=e.order.id;t&&(t.textContent=`Connecting to Payment...`),console.log(`💳 Payment initialization for Order:`,n);let r=await ne(n);if(console.log(`💳 Payment response:`,r),!r||!r.success||!r.authorizationUrl)throw Error(r?.message||`Unable to initialize payment.`);localStorage.setItem(`nutridust-pending-order`,String(n)),window.location.href=r.authorizationUrl}catch(e){console.error(`❌ Checkout / Payment Error:`,e),e?.response?.status===401?(alert(`Your login session has expired. Please login again.`),X()):alert(`Unable to continue to payment.
 
 `+(e?.response?.data?.message||e?.message||`Unknown error.`)),t&&(t.disabled=!1,t.textContent=`Continue to Payment`)}})}let l=document.getElementById(`trackOrderForm`);l&&l.addEventListener(`submit`,async e=>{e.preventDefault();let t=document.getElementById(`trackOrderNumber`),n=document.getElementById(`trackOrderResult`),r=document.getElementById(`trackOrderButton`),i=t?.value?.trim()||``;if(!i){n.innerHTML=`
 
@@ -2619,7 +2702,7 @@ Continue to Payment
 
                             </div>
 
-                        `;return}if(!J()){n.innerHTML=`
+                        `;return}if(!Y()){n.innerHTML=`
 
                             <div class="alert alert-warning">
 
@@ -2629,7 +2712,7 @@ Continue to Payment
 
                             </div>
 
-                        `,Y();return}r.disabled=!0,r.innerHTML=`
+                        `,X();return}r.disabled=!0,r.innerHTML=`
 
                         <span
                             class="spinner-border spinner-border-sm me-2"
@@ -2637,7 +2720,7 @@ Continue to Payment
 
                         Loading...
 
-                    `,n.innerHTML=``;try{console.log(`📦 Loading customer order:`,i);let e=await y(i);if(console.log(`📦 Customer Order:`,e),!e||!e.success||!e.order)throw Error(e?.message||`Order not found.`);let t=e.order,r=Q(t),a=$(t);n.innerHTML=`
+                    `,n.innerHTML=``;try{console.log(`📦 Loading customer order:`,i);let e=await v(i);if(console.log(`📦 Customer Order:`,e),!e||!e.success||!e.order)throw Error(e?.message||`Order not found.`);let t=e.order,r=Q(t),a=$(t);n.innerHTML=`
 
                             <div
                                 class="
@@ -2825,7 +2908,7 @@ Continue to Payment
 
                             Track Order
 
-                        `}});let u=document.getElementById(`viewOrderButton`);u&&u.addEventListener(`click`,async()=>{if(!J()){alert(`Please login to view your order.`),Y();return}let e=document.getElementById(`successOrderId`)?.textContent.replace(`#`,``).trim();if(!e){alert(`Order number could not be found.`);return}try{console.log(`📦 Loading customer order:`,e);let t=await y(e);if(console.log(`📦 Order Details:`,t),!t||!t.success||!t.order){alert(t?.message||`Unable to load your order.`);return}let r=t.order,i=Q(r),a=$(r),o=document.getElementById(`customerOrderDetailsModal`);o&&o.remove();let s=`
+                        `}});let u=document.getElementById(`viewOrderButton`);u&&u.addEventListener(`click`,async()=>{if(!Y()){alert(`Please login to view your order.`),X();return}let e=document.getElementById(`successOrderId`)?.textContent.replace(`#`,``).trim();if(!e){alert(`Order number could not be found.`);return}try{console.log(`📦 Loading customer order:`,e);let t=await v(e);if(console.log(`📦 Order Details:`,t),!t||!t.success||!t.order){alert(t?.message||`Unable to load your order.`);return}let r=t.order,i=Q(r),a=$(r),o=document.getElementById(`customerOrderDetailsModal`);o&&o.remove();let s=`
 
                             <div
                                 class="modal fade"
@@ -3022,7 +3105,7 @@ Continue to Payment
 
                             </div>
 
-                        `;document.body.insertAdjacentHTML(`beforeend`,s);let c=document.getElementById(`customerOrderDetailsModal`);new n(c).show(),c.addEventListener(`hidden.bs.modal`,()=>{c.remove()},{once:!0})}catch(e){console.error(`❌ Unable to load order:`,e),e?.response?.status===401?(alert(`Your login session has expired. Please login again.`),Y()):alert(e?.response?.data?.message||`Unable to load your order. Please try again.`)}})}catch(e){console.error(`❌ Application initialization failed:`,e);let t=document.querySelector(`#app`);t&&(t.innerHTML=`
+                        `;document.body.insertAdjacentHTML(`beforeend`,s);let c=document.getElementById(`customerOrderDetailsModal`);new n(c).show(),c.addEventListener(`hidden.bs.modal`,()=>{c.remove()},{once:!0})}catch(e){console.error(`❌ Unable to load order:`,e),e?.response?.status===401?(alert(`Your login session has expired. Please login again.`),X()):alert(e?.response?.data?.message||`Unable to load your order. Please try again.`)}})}catch(e){console.error(`❌ Application initialization failed:`,e);let t=document.querySelector(`#app`);t&&(t.innerHTML=`
 
                 <div class="container py-5">
 
@@ -3043,4 +3126,4 @@ Continue to Payment
 
                 </div>
 
-            `)}}Te().then(()=>setInterval(()=>{document.hidden||de().catch(()=>{})},3e3));
+            `)}}ze().then(()=>setInterval(()=>{document.hidden||S().catch(()=>{})},3e3));
