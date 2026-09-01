@@ -15,6 +15,7 @@ import riderRoutes from "./routes/riderRoutes.js";
 import adminRiderRoutes from "./routes/adminRiderRoutes.js";
 import adminStaffRoutes from "./routes/adminStaffRoutes.js";
 import { scheduleDatabaseBackup } from "./services/databasePersistenceService.js";
+import { handlePaystackWebhook } from "./controllers/paystackWebhookController.js";
 
 // =====================================================
 // ES MODULE PATH SETUP
@@ -61,7 +62,7 @@ app.use(cors({
 // JSON BODY PARSER
 // =====================================================
 
-app.use(express.json({ limit: "250kb" }));
+app.use(express.json({ limit: "250kb", verify:(req,_res,buffer)=>{req.rawBody=Buffer.from(buffer);} }));
 app.disable("x-powered-by");
 app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -69,7 +70,6 @@ app.use((req, res, next) => {
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     next();
 });
-
 app.use((req, res, next) => {
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
         res.on("finish", () => {
@@ -81,6 +81,8 @@ app.use((req, res, next) => {
 
     next();
 });
+
+app.post("/api/paystack/webhook", handlePaystackWebhook);
 
 
 // =====================================================

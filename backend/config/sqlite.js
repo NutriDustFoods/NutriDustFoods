@@ -758,6 +758,8 @@ ensureColumn("riders", "referred_by_rider_id", "INTEGER");
 ensureColumn("riders", "bank_name", "TEXT");
 ensureColumn("riders", "bank_account_name", "TEXT");
 ensureColumn("riders", "bank_account_number", "TEXT");
+ensureColumn("riders", "bank_code", "TEXT");
+ensureColumn("riders", "transfer_recipient_code", "TEXT");
 ensureColumn("riders", "username", "TEXT");
 ensureColumn("riders", "first_name", "TEXT");
 ensureColumn("riders", "middle_name", "TEXT");
@@ -904,12 +906,33 @@ db.exec(`
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(rider_id) REFERENCES riders(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS rider_wallet_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rider_id INTEGER NOT NULL,
+        transaction_type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        balance_after REAL NOT NULL,
+        reference TEXT NOT NULL UNIQUE,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(rider_id) REFERENCES riders(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS delivery_pricing_settings (
+        id INTEGER PRIMARY KEY CHECK(id=1),
+        shop_address TEXT,
+        shop_latitude REAL,
+        shop_longitude REAL,
+        price_per_km REAL NOT NULL DEFAULT 0,
+        minimum_delivery_fee REAL NOT NULL DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
     CREATE INDEX IF NOT EXISTS idx_rider_earnings_rider ON rider_earnings(rider_id);
     CREATE INDEX IF NOT EXISTS idx_rider_notifications_rider ON rider_notifications(rider_id, read_at);
     CREATE INDEX IF NOT EXISTS idx_rider_locations_rider ON rider_locations(rider_id, created_at);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_riders_referral_code ON riders(referral_code) WHERE referral_code IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_rider_subscriptions_rider ON rider_subscriptions(rider_id, expires_at);
     CREATE INDEX IF NOT EXISTS idx_rider_withdrawals_rider ON rider_withdrawals(rider_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_rider_wallet_transactions_rider ON rider_wallet_transactions(rider_id, created_at);
     CREATE TRIGGER IF NOT EXISTS reward_rider_referral_after_first_delivery
     AFTER UPDATE OF successful_deliveries ON riders
     WHEN NEW.successful_deliveries = 1
@@ -920,7 +943,23 @@ db.exec(`
         WHERE id=(SELECT referrer_rider_id FROM rider_referrals WHERE referred_rider_id=NEW.id AND status='pending');
         UPDATE rider_referrals SET status='rewarded',rewarded_at=CURRENT_TIMESTAMP WHERE referred_rider_id=NEW.id AND status='pending';
     END;
+    CREATE TRIGGER IF NOT EXISTS record_rider_referral_wallet_transaction
+    AFTER UPDATE OF successful_deliveries ON riders
+    WHEN NEW.successful_deliveries = 1
+    BEGIN
+        INSERT OR IGNORE INTO rider_wallet_transactions(rider_id,transaction_type,amount,balance_after,reference,description)
+        SELECT referrer_rider_id,'referral_reward',reward_amount,
+            (SELECT wallet_balance FROM riders WHERE id=referrer_rider_id) + CASE WHEN status='pending' THEN reward_amount ELSE 0 END,
+            'referral-' || id,'Referral reward'
+        FROM rider_referrals WHERE referred_rider_id=NEW.id AND status IN ('pending','rewarded');
+    END;
 `);
+ensureColumn("rider_withdrawals", "bank_code", "TEXT");
+ensureColumn("rider_withdrawals", "recipient_code", "TEXT");
+db.prepare("INSERT OR IGNORE INTO delivery_pricing_settings(id,shop_address,shop_latitude,shop_longitude,price_per_km,minimum_delivery_fee) VALUES(1,NULL,NULL,NULL,0,0)").run();
+db.prepare(`INSERT OR IGNORE INTO rider_wallet_transactions(rider_id,transaction_type,amount,balance_after,reference,description)
+    SELECT id,'opening_balance',wallet_balance,wallet_balance,'opening-' || id,'Existing wallet balance' FROM riders WHERE wallet_balance<>0`).run();
+db.prepare("UPDATE riders SET bank_account_number='******' || substr(bank_account_number,-4) WHERE bank_account_number IS NOT NULL AND bank_account_number NOT LIKE '%*%' AND length(bank_account_number)>4").run();
 
 db.prepare("INSERT OR IGNORE INTO rider_subscription_plans(name,price,duration_days,description) VALUES('Standard',0,30,'Core delivery access')").run();
 

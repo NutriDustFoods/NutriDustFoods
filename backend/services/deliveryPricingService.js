@@ -1,3 +1,5 @@
+import db from "../config/sqlite.js";
+
 const numberSetting = (name) => {
     const value = Number(process.env[name]);
     return Number.isFinite(value) ? value : null;
@@ -11,13 +13,14 @@ export const haversineKm = (lat1, lng1, lat2, lng2) => {
     return earthKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-export const getDeliverySettings = () => ({
-    shopAddress: String(process.env.SHOP_ADDRESS || "").trim(),
-    shopLatitude: numberSetting("SHOP_LATITUDE"),
-    shopLongitude: numberSetting("SHOP_LONGITUDE"),
-    pricePerKm: numberSetting("DELIVERY_PRICE_PER_KM"),
+export const getDeliverySettings = () => {const stored=db.prepare("SELECT * FROM delivery_pricing_settings WHERE id=1").get()||{};return ({
+    shopAddress: String(stored.shop_address || process.env.SHOP_ADDRESS || "").trim(),
+    shopLatitude: Number.isFinite(Number(stored.shop_latitude))&&stored.shop_latitude!==null?Number(stored.shop_latitude):numberSetting("SHOP_LATITUDE"),
+    shopLongitude: Number.isFinite(Number(stored.shop_longitude))&&stored.shop_longitude!==null?Number(stored.shop_longitude):numberSetting("SHOP_LONGITUDE"),
+    pricePerKm: Number(stored.price_per_km)>0?Number(stored.price_per_km):numberSetting("DELIVERY_PRICE_PER_KM"),
+    minimumDeliveryFee:Number(stored.minimum_delivery_fee)>0?Number(stored.minimum_delivery_fee):Number(process.env.DELIVERY_MINIMUM_FEE||0),
     googleMapsApiKey: String(process.env.GOOGLE_MAPS_API_KEY || "").trim()
-});
+});};
 
 export const calculateDeliveryQuote = async destinationAddress => {
     const settings = getDeliverySettings();
@@ -54,6 +57,6 @@ export const calculateDeliveryQuote = async destinationAddress => {
     const distanceMeters = Number(data.routes?.[0]?.distanceMeters);
     if (!(distanceMeters > 0)) throw Object.assign(new Error("We could not locate a driving route to this address. Please make the address more specific."), { status:422 });
     const distanceKm = distanceMeters / 1000;
-    const fee = Math.ceil(distanceKm * settings.pricePerKm);
+    const fee = Math.max(settings.minimumDeliveryFee||0,Math.ceil(distanceKm * settings.pricePerKm));
     return { distanceMeters, distanceKm:Number(distanceKm.toFixed(2)), fee, pricePerKm:settings.pricePerKm, duration:data.routes[0].duration || null, estimated:false };
 };

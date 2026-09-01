@@ -424,3 +424,19 @@ export const verifyPayment = async (
 export {
     PAYSTACK_BASE_URL
 };
+
+const paystackRequest = async config => {
+    try {
+        const response = await axios({ baseURL:PAYSTACK_BASE_URL, headers:getHeaders(), timeout:30000, ...config });
+        if (!response.data?.status) throw new Error(response.data?.message || "Paystack request failed.");
+        return response.data.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || error.message || "Paystack request failed.");
+    }
+};
+
+const offlineTest=()=>process.env.NODE_ENV==="test"&&!process.env.PAYSTACK_SECRET_KEY;
+export const listNigerianBanks = () => offlineTest()?Promise.resolve([{name:"Test Bank",code:"058",active:true}]):paystackRequest({ method:"GET", url:"/bank?currency=NGN&country=nigeria&perPage=100" });
+export const resolveNigerianAccount = (accountNumber, bankCode) => offlineTest()?Promise.resolve({account_number:accountNumber,account_name:"Test Rider",bank_code:bankCode}):paystackRequest({ method:"GET", url:`/bank/resolve?account_number=${encodeURIComponent(accountNumber)}&bank_code=${encodeURIComponent(bankCode)}` });
+export const createTransferRecipient = ({ name, accountNumber, bankCode }) => offlineTest()?Promise.resolve({recipient_code:`RCP_TEST_${accountNumber}`,name,bank_code:bankCode}):paystackRequest({ method:"POST", url:"/transferrecipient", data:{ type:"nuban", name, account_number:accountNumber, bank_code:bankCode, currency:"NGN" } });
+export const initiateTransfer = ({ amount, recipient, reference, reason }) => {const key=String(process.env.PAYSTACK_SECRET_KEY||"");if(key.startsWith("sk_live_")&&String(process.env.ENABLE_LIVE_PAYOUTS).toLowerCase()!=="true")return Promise.reject(new Error("Live rider payouts are locked. Complete company verification and explicitly enable live payouts first."));return offlineTest()?Promise.resolve({reference,status:"pending",amount,recipient,reason}):paystackRequest({ method:"POST", url:"/transfer", data:{ source:"balance", amount:Math.round(Number(amount)*100), recipient, reference, reason } });};

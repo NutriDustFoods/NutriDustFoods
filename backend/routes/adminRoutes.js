@@ -6,11 +6,14 @@ import {
 } from "../controllers/adminController.js";
 import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
 import { getOperationsSummary, runAutomationNow } from "../controllers/operationsController.js";
+import { getDeliveryPricingSettings, updateDeliveryPricingSettings } from "../controllers/deliveryPricingAdminController.js";
 
 const router = express.Router();
 router.get("/session", adminAuth, getAdminSession);
 router.get("/operations", adminAuth, requirePermission("operations.view"), getOperationsSummary);
 router.post("/operations/run", adminAuth, requirePermission("operations.run"), runAutomationNow);
+router.get("/delivery-pricing",adminAuth,requirePermission("withdrawals.manage"),getDeliveryPricingSettings);
+router.patch("/delivery-pricing",adminAuth,requirePermission("withdrawals.manage"),updateDeliveryPricingSettings);
 
 
 // =====================================================
