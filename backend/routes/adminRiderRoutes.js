@@ -1,6 +1,6 @@
 import express from "express";
 import { adminAuth, requirePermission } from "../middleware/adminAuth.js";
-import { getAdminRiders, createAdminRider, updateAdminRider, assignDelivery } from "../controllers/riderController.js";
+import { getAdminRiders, getAssignmentCandidates, createAdminRider, updateAdminRider, assignDelivery } from "../controllers/riderController.js";
 import { listWithdrawals, processWithdrawal } from "../controllers/riderCommerceController.js";
 import db from "../config/sqlite.js";
 import { listRiderApplications,getRiderApplication,streamLocalRiderDocument,recordRiderInspection,approveRiderApplication,rejectRiderApplication } from "../controllers/riderApplicationController.js";
@@ -14,6 +14,7 @@ router.patch("/applications/:id/inspection",requirePermission("riders.manage"),r
 router.post("/applications/:id/approve",requirePermission("riders.manage"),approveRiderApplication);
 router.post("/applications/:id/reject",requirePermission("riders.manage"),rejectRiderApplication);
 router.get("/", requirePermission("riders.view"), getAdminRiders);
+router.get("/assignment-candidates/:orderId", requirePermission("deliveries.assign"), getAssignmentCandidates);
 router.post("/", requirePermission("riders.manage"), createAdminRider);
 router.patch("/:id/status", requirePermission("riders.manage"), updateAdminRider);
 router.post("/assign/:orderId", requirePermission("deliveries.assign"), (req, res, next) => {
